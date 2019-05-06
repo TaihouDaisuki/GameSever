@@ -1,62 +1,72 @@
 #include "Log.h"
 
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <time.h>
+
 /* public */
 Log::Log()
-{
-    // nothing to do
-}
-Log::~Log()
-{
-    // nothing to do
-}
-
-int Log::Initialize()
 {
     logfile.open(Logfile_Name, ios::app | ios::out);
     if(!logfile)
     {
         cerr << "[ Error, logfile open failed ]" << endl;
-        return 0;
+        exit(-1);
     }
-    logfile << "<----------Logfile start here---------->" << endl;
-    Get_Time();
-    logfile << "Server starts running" << endl;
-    logfile.flush();
-
-    return 1;
 }
-void Log::Close()
+Log::~Log()
 {
-    Get_Time();
-    logfile << "Server will be closed" << endl;
     logfile << "<----------Logfile close here---------->" << endl << endl << endl;
     logfile.flush();
     logfile.close();
 }
 
-void Log::Connect(_Connect_Type Type, string Append)
+void Log::Initialize(const int state)
+{
+    logfile << "<----------Logfile start here---------->" << endl;
+    Get_Time();
+    if(!state)
+        logfile << "Server starts error" << endl;
+    else
+        logfile << "Server starts running" << endl;
+    logfile.flush();
+}
+void Log::Close()
+{
+    Get_Time();
+    logfile << "Server will be closed" << endl;
+}
+
+void Log::Server_Log(_Connect_Type Type, string Append)
 {
     Get_Time();
     switch(Type)
     {
         case _Connect:
-            logfile << "Get a connection from [ip = " << ip <<  "], " << Append << endl;
+            logfile << "Get a connection from " << ip <<  "[" << port << "], " << Append << endl;
             break;
         case _Disconnect:
-            logfile << "[ip = " << ip << "] disconnected from sever, " << Append << endl;
+            logfile << ip << "[" << port << "] disconnected from sever, reason: " << Append << endl;
             break;
         case _Missconnect:
-            logfile << "Sever miss the connection to [ip = " << ip << "]" << endl;
+            logfile << "Sever miss the connection to " << ip << "[" << port << "]" << endl;
             break;
         case _Reconnect:
-            logfile << "Get a reconnect request from [ip = " << ip << "], " << Append << endl;
+            logfile << "Get a reconnect request from " << ip << "[" << port << "], " << Append << endl;
+            break;
+        case _Recv:
+            logfile << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" << endl;
+            break;
+        case _Send:
+            logfile << "Send " << nbytes << " bytes(s) from " << ip << "[" << port "]" << endl;
             break;
         default:
             break;
     }
     logfile.flush();
 }
-void Log::Game(_Game_Type Type, const int Room_ID, string Append)
+void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
 {
     Get_Time();
     switch(Type)
