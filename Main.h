@@ -5,6 +5,21 @@
 #include <string>
 #include <cstring>
 
+const int deltaX[4][PlaneSize] = 
+{
+    {0, -2, -1, 0, 1, 2, 0, -1, 0, 1},
+    {0, -2, -1, 0, 1, 2, 0, -1, 0, 1},
+    {0, 1, 1, 1, 1, 1, 2, 3, 3, 3},
+    {0, -1, -1, -1, -1, -1, -2, -3, -3, -3}
+};
+const int deltaY[4][PlaneSize] = 
+{
+    {0, 1, 1, 1, 1, 1, 2, 3, 3, 3},
+    {0, -1, -1, -1, -1, -1, -2, -3, -3, -3},
+    {0, -2, -1, 0, 1, 2, 0, -1, 0, 1},
+    {0, -2, -1, 0, 1, 2, 0, -1, 0, 1}
+};
+
 struct UserInfo
 {
     char ip[IPLength];
@@ -13,20 +28,13 @@ struct UserInfo
     int side;
     char A[ChessSize * ChessSize];
     int plane;
+    char planeX[2][PlaneNum], planeY[2][PlaneNum]; // 0-head 1-tail
     
     UserInfo()
     {
-        ip[0] = '\0';
-        port = NoConnect; roomid = NoRoom; side = -1;
-        memset(A, 0, sizeof(A));
+        port = NoConnect;
+        roomid = NoRoom;
         plane = Unready;
-    }
-    UserInfo(char *_ip, int _port, int _roomid, int _side, char *_A, int _plane)
-    {
-        memcpy(ip, _ip, IPLength);
-        port = _port; roomid = _roomid; side = _side;
-        memcpy(A, _A, sizeof(A));
-        plane = _plane;
     }
     void operator =(const UserInfo &rhs)
 	{
@@ -34,6 +42,9 @@ struct UserInfo
         port = rhs.port; roomid = rhs.roomid; side = rhs.side;
         memcpy(A, rhs.A, sizeof(rhs.A));
         plane = rhs.plane;
+        for(int i = 0; i< PlaneNum; ++i)
+            for(int j = 0; j <= 1; ++j)
+                planeX[j][i] = rhs.planeX[j][i], planeY[j][i] = rhs.planeY[j][i];
 	}
 	int operator ==(const UserInfo &rhs) const
 	{
@@ -49,3 +60,12 @@ void init();
 
 int user_login(string username, const char* ip, const int port);
 int user_logout(string username, const char* ip, const int port);
+
+int join_room(string username, const int roomid, const int create = 0);
+int left_room(string username, const int roomid);
+
+
+int ready_operator(string username, const char *A, const char *p);
+int click_operator(string username, const int X, const int Y);
+int check_operator(string username, const char X0, const char Y0, const char X1, const char Y1);
+void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1);
