@@ -24,11 +24,6 @@ int main()
     return 0;
 }
 
-int Mod(int &rhs, const int m)
-{
-	return rhs >= m ? rhs-=m : rhs;
-}
-
 void reset_daemon()
 {
 	pid_t pid;
@@ -55,12 +50,15 @@ void reset_daemon()
 	umask(0);			//重设文件创建掩模，防止守护进程创建的文件存取位被父进程修改
 	return;
 }
-
 void init()
 {
 	usermap.clear();
 	useri = usercnt = 0;
 	roomi = roomcnt = 0;
+}
+int Mod(int &rhs, const int m)
+{
+	return rhs >= m ? rhs-=m : rhs;
 }
 
 int user_login(string username, const char* ip, const int port)

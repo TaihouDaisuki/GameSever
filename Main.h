@@ -52,11 +52,9 @@ struct UserInfo
 	}
 };
 
-int Mod(int &rhs, const int m);
-
 void reset_daemon();
-
 void init();
+int Mod(int &rhs, const int m);
 
 int user_login(string username, const char* ip, const int port);
 int user_logout(string username, const char* ip, const int port);
