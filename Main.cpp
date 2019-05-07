@@ -13,8 +13,10 @@
 
 map<string, int> usermap; // first-username second-userid
 UserInfo userlist[MaxUserNum];
-int useri, usercnt;
+int useri;
 map<int, pair<int, int> > roommap; // first-roomid second<Aplayerid, Bplayerid>
+int roomlist[MaxRoomNum];
+int roomi;
 
 int main()
 {
@@ -53,8 +55,10 @@ void reset_daemon()
 void init()
 {
 	usermap.clear();
-	useri = usercnt = 0;
-	roomi = roomcnt = 0;
+	roommap.clear();
+	useri = 0;
+	memset(roomlist, 0, sizeof(roomlist));
+	roomi = 0;
 }
 int Mod(int &rhs, const int m)
 {
@@ -97,7 +101,28 @@ int user_logout(string username, const char* ip, const int port)
 	return OK;
 }
 
-int join_room(string username, const int roomid, const int create)
+int create_room(string username)
+{
+	map<string, int>::iterator userit;
+	if(!(userit = usermap.find(username)))
+		return ERROR;
+	UserInfo &user = userlist[userit->second];
+
+	int lasti = roomi;
+	for(int i = 0; i < MaxRoomNum; ++i, Mod(++roomi, MaxRoomNum))
+		if(roomlist[i] != Available)
+			continue;
+	if(roomi == lasti)
+		return CreateRoomError;	
+
+	roomlist[roomi] = Waiting;
+	roommap.insert(makepair(roomi, makepair(userit->second, Empty)));
+	user.roomid = roomi;
+	user.side = 0;
+	user.plane = Unready;
+	return roomi;
+}
+int join_room(string username, const int roomid)
 {
 	if(roomid >= MaxRoomNum)
 		return ERROR;
@@ -108,36 +133,27 @@ int join_room(string username, const int roomid, const int create)
 	UserInfo &user = userlist[userit->second];
 
 	map<int pair<int, int> >::iterator roomit;
-	if(roomit = roommap.find(roomid))
-	{
-		if(!((roomit->second->first == Empty) | (roomit->second->second == Empty)))
-			return Full;
-		
-		if(roomit->second->first == Empty)
-		{
-			roomit->second->first = userit->second;
-			user.side = 0;
-		}
-		else
-		{
-			roomit->second->second = userit->second;
-			user.side = 1;
-		}
-		user.roomid = roomid;
-		user.plane = Unready;
-
-		return OK;
-	}
-
-	if(!create)
+	if(!(roomit = roommap.find(roomid)))
 		return NoExist;
-	roommap.insert(makepair(roomid, makepair(userit->second, Empty)));
+
+	if(!((roomit->second->first == Empty) | (roomit->second->second == Empty)))
+		return Full;
+		
+	if(roomit->second->first == Empty)
+	{
+		roomit->second->first = userit->second;
+		user.side = 0;
+	}
+	else
+	{
+		roomit->second->second = userit->second;
+		user.side = 1;
+	}
 	user.roomid = roomid;
-	user.side = 0;
 	user.plane = Unready;
 	return OK;
 }
-int left_room(string username, const int roomid)
+int left_room(string username)
 {
 	if(roomid >= MaxRoomNum)
 		return ERROR;
@@ -145,10 +161,10 @@ int left_room(string username, const int roomid)
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
-	serInfo &user = userlist[userit->second];
+	UserInfo &user = userlist[userit->second];
 	
 	map<int pair<int, int> >::iterator roomit;
-	if(!(roomit = roommap.find(roomid)))
+	if(!(roomit = roommap.find(user->roomid)))
 		return ERROR;
 
 	user.roomid = NoRoom;
@@ -158,37 +174,56 @@ int left_room(string username, const int roomid)
 		roomit->second->second = Empty;
 	
 	if((roomit->second->first == Empty) & (roomit->second->second == Empty))
-		roommap.remove(roomit);
+	{
+		roomlist[roomit->first] = Available;
+		roommap.erase(roomit);
+	}
 	return OK;
 }
 
-int ready_operator(string username, const char *A, const char *p)
+int ready_operator(string username, const int isReady)
 {
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
-	serInfo &user = userlist[userit->second];
+	UserInfo &user = userlist[userit->second];
 
-	user.plane = PlaneNum;
-	memcpy(user.A, A, ChessSize * ChessSize);
-	for(int i = 0; i < PlaneNum; ++i)
-		for(int j = 0; j <= 1; ++j)
-			user.planeX[j][i] = p++, user.plnaeY[j][i] = p++;
-
+	user.plane = isReady ? Ready : Unready;
+	
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user.roomid)))
 		return ERROR;
 
 	int opponent = user.side ? roomit->second->first : roomit->second->second;
 	
-	return (opponent != Empty && userlist[opponent].plane == PlaneNum) ? Start : Waiting;
+	return (user.plane == Ready && opponent != Empty && userlist[opponent].plane == Ready) ? GetMap : Waiting;
+}
+int start_operator(string username, const char *A, const char *p)
+{
+	map<string, int>::iterator userit;
+	if(!(userit = usermap.find(username)))
+		return ERROR;
+	UserInfo &user = userlist[userit->second];
+
+	if(!(user->plane == Ready))	
+		return ERROR;
+
+	user->plane = PlaneNum;
+	memcpy(user.A, A, ChessSize * ChessSize);
+	for(int i = 0; i < PlaneNum; ++i)
+		for(int j = 0; j <= 1; ++j)
+			user.planeX[j][i] = p++, user.plnaeY[j][i] = p++;
+
+	int opponent = user.side ? roomit->second->first : roomit->second->second;
+	
+	return (userlist[opponent].plane == Ready) ? GetMap : Start;
 }
 int click_operator(string username, const char X, const char Y)
 {
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
-	serInfo &user = userlist[userit->second];
+	UserInfo &user = userlist[userit->second];
 	
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user.roomid)))
@@ -204,7 +239,7 @@ int check_operator(string username, const char X0, const char Y0, const char X1,
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
-	serInfo &user = userlist[userit->second];
+	UserInfo &user = userlist[userit->second];
 
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user.roomid)))
@@ -223,7 +258,14 @@ int check_operator(string username, const char X0, const char Y0, const char X1,
 		return Wrong;
 	
 	fill_plane(opponent.A, X0, Y0, X1, Y1);
-	return (--opponent.plane) ? Right : GameEnd;
+	if(!(--opponent.plane))
+	{
+		user->plane = Unready;
+		opponent->plane = Unready;
+		return GameEnd;
+	}
+	else
+		return Right;
 }
 void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1)
 {

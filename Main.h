@@ -59,10 +59,12 @@ int Mod(int &rhs, const int m);
 int user_login(string username, const char* ip, const int port);
 int user_logout(string username, const char* ip, const int port);
 
-int join_room(string username, const int roomid, const int create = 0);
-int left_room(string username, const int roomid);
+int create_room(string username);
+int join_room(string username, const int roomid);
+int left_room(string username);
 
-int ready_operator(string username, const char *A, const char *p);
+int ready_operator(string username, const int isReady);
+int start_operator(string username, const char *A, const char *p)
 int click_operator(string username, const int X, const int Y);
 int check_operator(string username, const char X0, const char Y0, const char X1, const char Y1);
 void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1);

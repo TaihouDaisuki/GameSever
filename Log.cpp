@@ -72,21 +72,27 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
     switch(Type)
     {
         case _Join:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << "has joined currently." << endl;
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has joined currently." << endl;
             break;
         case _Leave:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << "has left currently." << endl;
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has left currently." << endl;
             break;
         case _Ready:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << "has ready currently." << endl;
-            logfile << "The initial statement is: " << endl;
-            logfile << Append << endl;
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has ready currently." << endl;
+            break;
+        case _Unready:
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has unready currently." << endl;
             break;
         case _Start:
             logfile << "Room<" << Room_ID << ">: " << "Game start." << endl;
+            logfile << "The initial statement is: " << endl;
+            logfile << Append << endl;
             break;
         case _Pause:
-            logfile << "Room<" << Room_ID << ">: " << "Game paused, " << user << "[" << ip << "]" << "miss connection with server" << endl;
+            logfile << "Room<" << Room_ID << ">: " << "Game paused, " << user << "[" << ip << "]" << " miss connection with server" << endl;
+            break;
+        case _Continue:
+            logfile << "Room<" << Room_ID << ">: " << "Game continued, " << user << "[" << ip << "]" << " has reconnected." << endl;
             break;
         case _Operate:
             logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " choose " << Append << endl;

@@ -18,13 +18,19 @@
 #define NoConnect           -1
 #define NoRoom              -1
 #define Unready             -1
+#define Ready               -2
 #define Empty               -1
+
+#define CreateRoomError     -1
 
 #define NoExist             2
 #define Full                3
 
+#define Available           0
+#define Joined              1
 #define Waiting             2
-#define Start               3
+#define GetMap              3
+#define Start               4
 
 #define NoPlane             1
 #define HitPlane            2
