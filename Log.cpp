@@ -38,7 +38,7 @@ void Log::Close()
     logfile << "Server will be closed" << endl;
 }
 
-void Log::Server_Log(_Connect_Type Type, string Append)
+void Log::Server_Log(_Server_Type Type, string Append)
 {
     Get_Time();
     switch(Type)
@@ -59,7 +59,7 @@ void Log::Server_Log(_Connect_Type Type, string Append)
             logfile << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" << endl;
             break;
         case _Send:
-            logfile << "Send " << nbytes << " bytes(s) from " << ip << "[" << port "]" << endl;
+            logfile << "Send " << nbytes << " bytes(s) from " << ip << "[" << port << "]" << endl;
             break;
         default:
             break;
@@ -90,6 +90,9 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
             break;
         case _Operate:
             logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " choose " << Append << endl;
+            break;
+        case _Check:
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " check " << Append << endl;
             break;
         case _Finish:
             logfile << "Room<" << Room_ID << ">: " << "Game finished, " << user << "[" << ip << "]" << " win." << endl;

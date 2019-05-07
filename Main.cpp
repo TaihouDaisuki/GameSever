@@ -4,6 +4,9 @@
 #include <list>
 #include <string>
 
+#include <stdbool.h>
+#include <mysql.h>
+
 #include "Log.h"
 #include "Server.h"
 #include "Main.h"
@@ -237,4 +240,23 @@ void fill_plane(char *A, const char X0, const char Y0, const char X1, const char
 		pos = basepos + deltaX[k][i] * ChessSize + deltaY[k][i];
 		A[pos] = -A[pos];
 	}		
+}
+
+int check_password(string username, string password)
+{
+	string sqlqry;
+	sqlqry = "select count(*) from user where account = \'";
+	sqlqry += username;
+	sqlqry.append("\'").append(" and password_MD5 = md5(\'");
+	sqlqry += password;
+	sqlqry.append("\');");
+
+	mysql_query(mysql, sqlqry.c_str());
+    result = mysql_store_result(mysql);
+    row = mysql_fetch_row(result);
+    int res = atoi(row[0]) ? 1 : 0;
+
+    mysql_free_result(result);
+
+    return res;
 }
