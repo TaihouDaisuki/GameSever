@@ -6,6 +6,7 @@
 
 #define IPLength            20
 #define UserNameLength      20
+#define PasswordLength      20
 #define BuffLength          1000
 
 #define ChessSize           10
