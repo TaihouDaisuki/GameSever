@@ -78,15 +78,17 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
             logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has left currently." << endl;
             break;
         case _Ready:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has ready currently." << endl;
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has ready." << endl;
             break;
         case _Unready:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has unready currently." << endl;
+            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " is unready." << endl;
+            break;
+        case _GetMap:
+            logfile << "Room<" << Room_ID << ">: " << "Get " << user << "[" << ip << "]" << " initial map:" << endl;
+            logfile << Append;
             break;
         case _Start:
             logfile << "Room<" << Room_ID << ">: " << "Game start." << endl;
-            logfile << "The initial statement is: " << endl;
-            logfile << Append << endl;
             break;
         case _Pause:
             logfile << "Room<" << Room_ID << ">: " << "Game paused, " << user << "[" << ip << "]" << " miss connection with server" << endl;

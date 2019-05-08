@@ -16,6 +16,8 @@
 #define OnePageRoomNum      10
 #define PlaneNum            3
 
+#define ThrowPack           19434
+
 #define LoginState          0
 #define SearchingState      1
 #define RoomState           2

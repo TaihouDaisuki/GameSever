@@ -19,7 +19,8 @@ public:
     enum _Game_Type
     {
         _Join, _Leave, _Ready, _Unready,
-        _Start, _Pause, _Continue, _Operate, _Check, _Finish
+        _GetMap, _Start, _Pause, _Continue,
+         _Operate, _Check, _Finish
     };
 
     char ip[IPLength];
