@@ -15,6 +15,13 @@
 #define MaxRoomNum          1024
 #define PlaneNum            3
 
+#define LoginState          0
+#define SearchingState      1
+#define RoomState           2
+#define StartState          3
+#define OperateState        4
+#define WaitingState        5
+
 #define NoConnect           -1
 #define NoRoom              -1
 #define Unready             -1
