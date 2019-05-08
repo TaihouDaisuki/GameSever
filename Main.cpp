@@ -36,39 +36,126 @@ int main()
 	while(1)
 	{
 		/* recv */
-		memcpy(logop.ip, /* ip from packet */, IPLength);
-		logop.port = /* port from packet */;
-		logop.nbytes = /* nbytes from packet */;
-		memcpy(logop.user, /* username from packet */, UserNameLength);
-		logop.Server_Log(_Recv);
 
+		/* login state */
 		if(/* pack = login */)
 		{
-			string username;
-			string password;
+			string username = logop.username;
+			string password; /* from packet */
 			int sqlres;
 
 			sqlres = check_user(username);
 			if(!sqlres)
 			{
-				/* send no such user */
 				logop.Server_Log(_Connect, "failed(improper username).");
+				/* send no such user */
 				continue;
 			}
 			sqlres = check_password(username, password);
 			if(!sqlres)
 			{
+				logop.Server_Log(_Connect, "failed(wrong) password).");
 				/* send password error */
-				logop.Server_Log(_Connect, "failed(improper password).");
 				continue;
 			}
 			// login op
-
+			int res = user_login(username, logop.ip, logop.port);
+			//if(res == ERROR) /* too many user, add in future (maybe) */
+			if(res == REPEAT) // kick
+			{
+				if(user_relogin(username, logop.ip, logop.port) == OK)
+				{
+					logop.Server_Log(_Reconnect, username + " relogin successfully");
+					/* send user last state */
+					continue;
+				}
+				map<string, int>::iterator userit;
+				userit = usermap.find(username);
+				/* send kick to userlist[userit->second].ip[userlist[userit->second].port] */
+				continue;
+			}
+			/* common login */
+			/* send login success */
+			logop.Server_Log(_Connect, username + " login successfully.");
 			continue;
 		}
-		if(/* pack = create/join room */)
+		if(/* pack = logout */)
+		{
+			int kickoff; /* from packet */
+			if(user_logout(logop.user, logop.ip, logop.port, kickoff) == ERROR) 
+				continue; /* throw all trush pack without log in after log out */
+			if(kickoff)
+				logop.Server_Log(_Disconnect, logop.user + " was kicked off.");
+			else
+				logop.Server_Log(_Disconnect, logop.user + " log out successfully");
+		}
+
+		/* searching state */
+		if(/* pack = get room list */)
+		{
+			int start_num; /* from packet */
+			int reslist[OnePageRoomNum];
+			int resnum = get_room_list(start_num, reslist);
+			/* send back room list */
+			continue;
+		}
+		if(/* pack = create room */)
+		{
+			int roomid = create_room(logop.user);
+			// if(roomid == CreateRoomError) /* no more free room, do in future */
+			logop.Game_Log(_Join, roomid);
+			/* send back roomid */
+			continue;
+		}
+		if(/* pack = join room */)
+		{
+			int roomid; /* get from packet */
+			int res = join_room(logop.user, roomid);
+			if(res == FULL || res == NoExist)
+			{
+				/* send back error */
+			}
+			else
+			{
+				logop.Game_Log(_Join, roomid);
+				/* send back roomid */
+			}
+			
+			continue;
+		}
+		if(/* pack = left room */)
+		{
+			int res = left_room(logop.user);
+			if(res != NoRoom)
+				logop.Game_Log(_Leave, res);
+			/* send back success */
+		}
+
+		/* room state */
+		if(/* pack = get room state */)
 		{
 			
+			continue;
+		}
+
+		/* start state */
+		if(/* pack = chessboard */)
+		{
+			continue;
+		}
+
+		/* operate state & waiting state */
+		if(/* pack = click */)
+		{
+			continue;
+		}
+		if(/* pack = check */)
+		{
+			continue;
+		}
+		if(/* pack = empty */)
+		{
+			continue;
 		}
 	}
 
@@ -120,9 +207,8 @@ int user_login(string username, const char* ip, const int port)
 	map<string, int>::iterator userit;
 	if(userit = usermap.find(username)) // has login
 	{
-		// send logout to (userlist[it->seconde].ip, userlist[it->seconde].port)
-		memcpy(userlist[userit->second].ip, ip, IPLength);
-		userlist[userit->second].port = port;
+		if(!strcmp(userlist[userit->second].ip, ip) && userlist[userit->second].port == port)
+			return OK;
 		return REPEAT;
 	}
 	
@@ -136,27 +222,66 @@ int user_login(string username, const char* ip, const int port)
 	UserInfo &user = userlist[userit->second];
 	memcpy(user.ip, ip, IPLength);
 	user.port = port;
+	userlist[userit->second].kick = 0;
 	user.roomid = NoRoom;
 	usermap.insert(makepair(username, useri));
 	return OK;
 }
-int user_logout(string username, const char* ip, const int port)
+int user_relogin(string username, const char* ip, const int port)
 {
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
 
-	userlist[userit->second].port = NoConnect;
-	usermape.erase(userit->first);
+	if(!userlist[userit->second].kick)
+		return ERROR;
+	memcpy(userlist[userit->second].ip, ip, IPLength);
+	userlist[userit->second].port = port;
+	return OK;
+}
+int user_logout(string username, const char* ip, const int port, const int kick)
+{
+	map<string, int>::iterator userit;
+	if(!(userit = usermap.find(username)))
+		return ERROR;
+
+	if(kick)
+	{
+		userlist[userit->second].kick = 1;
+	}
+	else
+	{
+		userlist[userit->second].port = NoConnect;
+		usermape.erase(userit->first);
+	}
+	
 	return OK;
 }
 
+int get_room_list(const int start_num, int * reslist)
+{
+	map<int pair<int, int> >::iterator roomit;
+	roomit = roommap.begin();
+	int i = 0, cnt = 0;
+	while(roomit != roommap.end())
+	{
+		if(cnt == start_num + OnePageRoomNum)
+			break;
+		if((roomit->second->first == Empty) ^ (roomit->second->second == Empty))
+			reslist[i++] = roomit->first, ++cnt;
+		if(i == OnePageRoomNum)
+			i-=OnePageRoomNum;
+	}
+	return (!i && cnt) ? OnePageRoomNum : i;
+}
 int create_room(string username)
 {
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
 	UserInfo &user = userlist[userit->second];
+	if(user->roomid != NoRoom)
+		return user->roomid;
 
 	int lasti = roomi;
 	for(int i = 0; i < MaxRoomNum; ++i, Mod(++roomi, MaxRoomNum))
@@ -181,6 +306,8 @@ int join_room(string username, const int roomid)
 	if(!(userit = usermap.find(username)))
 		return ERROR;
 	UserInfo &user = userlist[userit->second];
+	if(user->roomid == roomid)
+		return OK;
 
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(roomid)))
@@ -205,18 +332,18 @@ int join_room(string username, const int roomid)
 }
 int left_room(string username)
 {
-	if(roomid >= MaxRoomNum)
-		return ERROR;
-
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
 	UserInfo &user = userlist[userit->second];
+	if(user->roomid == NoRoom)
+		return NoRoom;
 	
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user->roomid)))
 		return ERROR;
 
+	int tmproomid = user.roomid;
 	user.roomid = NoRoom;
 	if(!user.side)
 		roomit->second->first = Empty;
@@ -228,7 +355,7 @@ int left_room(string username)
 		roomlist[roomit->first] = Available;
 		roommap.erase(roomit);
 	}
-	return OK;
+	return tmproomid;
 }
 
 int ready_operator(string username, const int isReady)

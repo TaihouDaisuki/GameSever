@@ -24,7 +24,7 @@ public:
 
     char ip[IPLength];
     int port, nbytes;
-    char user[UserNameLength];
+    string user;
 private:
     const int Cur_TimeZone = 8;
     const char Logfile_Name[15] = "server.log";

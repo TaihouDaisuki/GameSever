@@ -24,6 +24,7 @@ struct UserInfo
 {
     char ip[IPLength];
     int port;
+    int kick;
     int roomid;
     int side;
     char A[ChessSize * ChessSize];
@@ -33,6 +34,7 @@ struct UserInfo
     UserInfo()
     {
         port = NoConnect;
+        kick = 0;
         roomid = NoRoom;
         plane = Unready;
     }
@@ -57,8 +59,10 @@ void init();
 int Mod(int &rhs, const int m);
 
 int user_login(string username, const char* ip, const int port);
-int user_logout(string username, const char* ip, const int port);
+int user_relogin(string username, const char* ip, const int port);
+int user_logout(string username, const char* ip, const int port, const int kick = 0);
 
+int get_room_list(const int start_num, int * reslist);
 int create_room(string username);
 int join_room(string username, const int roomid);
 int left_room(string username);

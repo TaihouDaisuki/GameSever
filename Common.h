@@ -13,6 +13,7 @@
 #define PlaneSize           10
 #define MaxUserNum          100
 #define MaxRoomNum          1024
+#define OnePageRoomNum      10
 #define PlaneNum            3
 
 #define LoginState          0
@@ -21,6 +22,7 @@
 #define StartState          3
 #define OperateState        4
 #define WaitingState        5
+#define KickState           6
 
 #define NoConnect           -1
 #define NoRoom              -1
