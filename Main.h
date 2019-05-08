@@ -30,6 +30,7 @@ struct UserInfo
     char A[ChessSize * ChessSize];
     int plane;
     char planeX[2][PlaneNum], planeY[2][PlaneNum]; // 0-head 1-tail
+    char planeflag[PlaneNum];
     
     UserInfo()
     {
@@ -41,12 +42,19 @@ struct UserInfo
     void operator =(const UserInfo &rhs)
 	{
 		memcpy(ip, rhs.ip, IPLength);
-        port = rhs.port; roomid = rhs.roomid; side = rhs.side;
+        port = rhs.port; 
+        kick = rhs.kick
+        roomid = rhs.roomid; 
+        side = rhs.side;
         memcpy(A, rhs.A, sizeof(rhs.A));
         plane = rhs.plane;
         for(int i = 0; i< PlaneNum; ++i)
+        {
+            planeflag[i] = rhs.planeflag[i];
             for(int j = 0; j <= 1; ++j)
                 planeX[j][i] = rhs.planeX[j][i], planeY[j][i] = rhs.planeY[j][i];
+        }
+            
 	}
 	int operator ==(const UserInfo &rhs) const
 	{
@@ -57,6 +65,7 @@ struct UserInfo
 void reset_daemon();
 void init();
 int Mod(int &rhs, const int m);
+string Transform(const int X, const int Y);
 
 int user_login(string username, const char* ip, const int port);
 int user_relogin(string username, const char* ip, const int port);

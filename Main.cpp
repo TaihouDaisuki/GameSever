@@ -15,6 +15,7 @@ Log logop;
 
 map<string, int> usermap; // first-username second-userid
 UserInfo userlist[MaxUserNum];
+char operatorbuffer[MaxUserNum][10];
 int useri;
 map<int, pair<int, int> > roommap; // first-roomid second<Aplayerid, Bplayerid>
 int roomlist[MaxRoomNum];
@@ -171,16 +172,68 @@ int main()
 		/* operate state & waiting state */
 		if(/* pack = click */)
 		{
+			char X; /* get from packet */
+			char Y; /* get from packet */
+			int res = click_operator(logop.user, X, Y);
 			
+			map<string, int>::iterator userit;
+			userit = usermap.find(logop.user);
+			UserInfo &user = userlist[userit->second];
+			map<int pair<int, int> >::iterator roomit;
+			roomit = roommap.find(user.roomid);
+			int opponent = user.side ? roomit->second->first : roomit->second->second;
+
+			operatorbuffer[userit->second][0] = 0;
+			operatorbuffer[opponent][0] = 1; /* click by other side */
+			operatorbuffer[opponent][1] = X;
+			operatorbuffer[opponent][2] = Y;
+
+			/* send to operator result by res */
 
 			continue;
 		}
 		if(/* pack = check */)
 		{
+			char X0; /* get from packet */
+			char Y0; /* get from packet */
+			char X1; /* get from packet */
+			char Y1; /* get from packet */
+			int res = check_operator(logop.user, X0, Y0, X1, Y1);
+
+			map<string, int>::iterator userit;
+			userit = usermap.find(logop.user);
+			UserInfo &user = userlist[userit->second];
+			map<int pair<int, int> >::iterator roomit;
+			roomit = roommap.find(user.roomid);
+			int opponent = user.side ? roomit->second->first : roomit->second->second;
+
+			operatorbuffer[userit->second][0] = 0;
+			if(res != GameEnd)
+			{
+				operatorbuffer[opponent][0] = 2; /* check by other side */
+				operatorbuffer[opponent][1] = X0;
+				operatorbuffer[opponent][2] = Y0;
+				operatorbuffer[opponent][3] = X1;
+				operatorbuffer[opponent][4] = Y1;
+			}
+			else
+			{
+				operatorbuffer[opponent][0] = 3; /* Game End */
+			}
+
+			/* send to operator result by res */
+
 			continue;
 		}
 		if(/* pack = empty */)
 		{
+			map<string, int>::iterator userit;
+			userit = usermap.find(logop.user);
+
+			if(operatorbuffer[userit->second][0] == 0)
+				/* send back heartbeats */;
+			else
+				/* send back operatorbuffer */;
 			continue;
 		}
 	}
@@ -226,6 +279,39 @@ void init()
 int Mod(int &rhs, const int m)
 {
 	return rhs >= m ? rhs-=m : rhs;
+}
+string Transform(const char X, const char Y)
+{
+	string res = "";
+	switch(Y)
+	{
+		0: res.append("A"); break;
+		1: res.append("B"); break;
+		2: res.append("C"); break;
+		3: res.append("D"); break;
+		4: res.append("E"); break;
+		5: res.append("F"); break;
+		6: res.append("G"); break;
+		7: res.append("H"); break;
+		8: res.append("I"); break;
+		9: res.append("J"); break;
+		default:  break;
+	}
+	switch(X)
+	{
+		0: res.append("0"); break;
+		1: res.append("1"); break;
+		2: res.append("2"); break;
+		3: res.append("3"); break;
+		4: res.append("4"); break;
+		5: res.append("5"); break;
+		6: res.append("6"); break;
+		7: res.append("7"); break;
+		8: res.append("8"); break;
+		9: res.append("9"); break;
+		default:  break;
+	}
+	return res;
 }
 
 int user_login(string username, const char* ip, const int port)
@@ -441,18 +527,17 @@ int start_operator(string username, const char *A, const char *p)
 		user->plane = PlaneNum;
 		memcpy(user.A, A, ChessSize * ChessSize);
 		for(int i = 0; i < PlaneNum; ++i)
+		{
 			for(int j = 0; j <= 1; ++j)
 				user.planeX[j][i] = p++, user.plnaeY[j][i] = p++;
-		
+			user.planeflag[i] = 1;
+		}
+		operatorbuffer[userit->second][0] = 0;
+
 		string Map = "";
 		for(int i = 0; i < ChessSize; ++i)
-		{
-			int base = i * ChessSize;
-			for(int j = 0; j < ChessSize; ++j)
-				Map.append(A[base + j]);
-			Map.append("\n");
-		}
-		logop.Game_Log(_GetMap, Map);
+			Map.append(A[i * ChessSize], ChessSize).append("\n");
+		logop.Game_Log(_GetMap, user->roomid, Map);
 	}
 
 	int opponent = user.side ? roomit->second->first : roomit->second->second;
@@ -472,7 +557,19 @@ int click_operator(string username, const char X, const char Y)
 	UserInfo &opponent = user.side ? userlist[roomit->second->first] : userlist[roomit->second->second];
 
 	int pos = ChessSize * X + Y;
+	if(opponent.A[pos] < 0)
+		return -opponent.A[pos];
+
+	string Append = "";
+	Append.append("(").append(Transform(X, Y)).append("),  the result is ");
+	if(opponent.A[pos] == NoPlane)
+		Append.append("Empty.");
+	else if(opponent.A[pos] == HitPlane)
+		Append.append("Plane.");
+	else
+		Append.append("Aircraft nose.");
 	opponent.A[pos] = -opponent.A[pos];
+	logop.Game_Log(_Operate, roomit->first, Append);
 	return -opponent.A[pos];
 }
 int check_operator(string username, const char X0, const char Y0, const char X1, const char Y1)
@@ -487,22 +584,33 @@ int check_operator(string username, const char X0, const char Y0, const char X1,
 		return ERROR;
 	UserInfo &opponent = user.side ? userlist[roomit->second->first] : userlist[roomit->second->second];
 
-	int res = 0;
+	int flag = -1;
 	for(int i = 0; i < PlaneNum; ++i)
 		if(opponent.planeX[0][i] == X0 && opponent.planeY[0][i] == Y0 
 			&& opponent.planeX[1][i] == X1 && opponent.planeY[1][i] == Y1)
 			{
-				res = 1;
+				flag = i;
 				break;
 			}
-	if(res == 0)
+	string Append = "";
+	Append.append("(").append(Transform(X0, Y0)).append(")-(").append(Transform(X1, Y1)).append("), the result is ");
+	if(flag == -1)
+	{
+		Append.append("wrong");
+		logop.Game_Log(_Check, roomit->first, Append);
 		return Wrong;
+	}
+	if(!opponent.planeflag[flag])
+		return Right;
 	
+	Append.append("right");
+	logop.Game_Log(_Check, roomit->first, Append);
 	fill_plane(opponent.A, X0, Y0, X1, Y1);
 	if(!(--opponent.plane))
 	{
 		user->plane = Unready;
 		opponent->plane = Unready;
+		logop.Game_Log(_Finish, roomit->first);
 		return GameEnd;
 	}
 	else
