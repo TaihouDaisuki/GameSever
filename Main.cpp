@@ -11,6 +11,8 @@
 #include "Server.h"
 #include "Main.h"
 
+Log logop;
+
 map<string, int> usermap; // first-username second-userid
 UserInfo userlist[MaxUserNum];
 int useri;
@@ -23,6 +25,54 @@ int main()
     reset_daemon();
 	init();
 
+	int serverstate; /* server initialize */
+	logop.Initialize(serverstate);
+	if(serverstate == ERROR)
+	{
+		logop.Close();
+		exit(-1);
+	}		
+
+	while(1)
+	{
+		/* recv */
+		memcpy(logop.ip, /* ip from packet */, IPLength);
+		logop.port = /* port from packet */;
+		logop.nbytes = /* nbytes from packet */;
+		memcpy(logop.user, /* username from packet */, UserNameLength);
+		logop.Server_Log(_Recv);
+
+		if(/* pack = login */)
+		{
+			string username;
+			string password;
+			int sqlres;
+
+			sqlres = check_user(username);
+			if(!sqlres)
+			{
+				/* send no such user */
+				logop.Server_Log(_Connect, "failed(improper username).");
+				continue;
+			}
+			sqlres = check_password(username, password);
+			if(!sqlres)
+			{
+				/* send password error */
+				logop.Server_Log(_Connect, "failed(improper password).");
+				continue;
+			}
+			// login op
+
+			continue;
+		}
+		if(/* pack = create/join room */)
+		{
+			
+		}
+	}
+
+	logop.Close();
     return 0;
 }
 
@@ -282,6 +332,22 @@ void fill_plane(char *A, const char X0, const char Y0, const char X1, const char
 	}		
 }
 
+int check_user(string username)
+{
+	string sqlqry;
+	sqlqry = "select count(*) from user where account = \'";
+	sqlqry += username;
+	sqlqry.append("\';");
+
+	mysql_query(mysql, sqlqry.c_str());
+    result = mysql_store_result(mysql);
+    row = mysql_fetch_row(result);
+    int res = atoi(row[0]) ? 1 : 0;
+
+    mysql_free_result(result);
+
+    return res;
+}
 int check_password(string username, string password)
 {
 	string sqlqry;

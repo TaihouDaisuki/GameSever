@@ -69,4 +69,5 @@ int click_operator(string username, const int X, const int Y);
 int check_operator(string username, const char X0, const char Y0, const char X1, const char Y1);
 void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1);
 
+int check_user(string username);
 int check_password(string username, string password);
