@@ -29,50 +29,55 @@ Server::~Server()
 
 int Server::Initialize()
 {
-    if(server_fd = socket(AF_INET, SOCK_DGRAM, 0) < 0)
-    {
-        cerr << "Server failed to create fd" << endl;
-        return ERROR;
-    }
+    server_fd = socket(AF_INET, SOCK_DGRAM, 0);  //创建网络通信对象
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = inet_addr(ip);
 
-    int _REUSEADDR = 1;
-    if(setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &_REUSEADDR, sizeof(_REUSEADDR)) == -1)
+    //绑定socket对象与通信链接
+    int ret = bind(server_fd, (struct sockaddr *)&addr, sizeof(addr));
+    if (ret < 0)
     {
-        cerr << "Server failed to set REUSEADDR" << endl;
-        return ERROR;
+        cerr << "Error: bind" << endl;
+        return Error;
     }
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = inet_addr(ip);
-    if(bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
-    {
-        cerr << "Server failed to bind" << endl;
-        return ERROR;
-    }
-
+    
+    cout << "----------Server Start Running----------" << endl;
     return OK;
 }
 
-int Server::Send()
-{
-    int res = 0;
-    if((res = sendto(server_fd, buff, BuffLength, 0, (struct addr*)client_addr, sizeof(struct sockaddr)) < 0)
-    {
-        cerr << "Failed to send to " << inet_ntoa(client_addr.sin_addr.s_addr) << "[" << ntohs(client_addr.port) << "]" << endl;
-        return ERROR;
-    }
-    return OK;
-}
 int Server::Recv()
 {
     int res = 0;
-    if((res = recvfrom(server_fd, buff, BuffLength, 0, (struct addr*)&client_addr, sizeof(struct sockaddr)) < 0)
+    socklen_t len = sizeof(client_addr);
+    if(res = recvfrom(server_fd, buff, BuffLength, 0, (struct sockaddr*)&client_addr, &len) < 0)
     {
-        cerr << "Failed to receive from client" << endl;
+        //cerr << "Failed to receive from client" << endl;
         return ERROR;
     }
-    return OK;
+    return res;
+}
+int Server::Send(char *buff, struct sockaddr_in client_addr, int count)
+{
+    int res = 0;
+    if(res = sendto(server_fd, buff, BuffLength, 0, (struct sockaddr*)&client_addr, sizeof(struct sockaddr)) < 0)
+    {
+       // cerr << "Failed to send to " << inet_ntoa(client_addr.sin_addr.s_addr) << "[" << ntohs(client_addr.port) << "]" << endl;
+        return ERROR;
+    }
+    return res;
+}
+
+int Server::MainActivity()
+{
+    //just do once
+    socklen_t len = sizeof(client_addr);
+    int res = recvfrom(server_fd, buff, BuffLength, MSG_DONTWAIT, (struct sockaddr *)&client_addr, &len);
+    if (res <= 0)
+        return NoPack;
+    else
+        return dealpack(this, res, client_addr, buff);
 }
 
 /* private */

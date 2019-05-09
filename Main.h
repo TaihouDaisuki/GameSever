@@ -24,13 +24,18 @@ struct UserInfo
 {
     char ip[IPLength];
     int port;
+
     int kick;
+
     int roomid;
     int side;
-    char A[ChessSize * ChessSize];
+
     int plane;
+    char A[ChessSize * ChessSize];
     char planeX[2][PlaneNum], planeY[2][PlaneNum]; // 0-head 1-tail
     char planeflag[PlaneNum];
+
+    char tbuff[tBufferLength];
     
     UserInfo()
     {
@@ -38,40 +43,23 @@ struct UserInfo
         kick = 0;
         roomid = NoRoom;
         plane = Unready;
+        tbuffer[0] = NonePack;
     }
-    void operator =(const UserInfo &rhs)
-	{
-		memcpy(ip, rhs.ip, IPLength);
-        port = rhs.port; 
-        kick = rhs.kick
-        roomid = rhs.roomid; 
-        side = rhs.side;
-        memcpy(A, rhs.A, sizeof(rhs.A));
-        plane = rhs.plane;
-        for(int i = 0; i< PlaneNum; ++i)
-        {
-            planeflag[i] = rhs.planeflag[i];
-            for(int j = 0; j <= 1; ++j)
-                planeX[j][i] = rhs.planeX[j][i], planeY[j][i] = rhs.planeY[j][i];
-        }
-            
-	}
-	int operator ==(const UserInfo &rhs) const
-	{
-		return (!strcmp(ip, rhs.ip) && port == rhs.port);
-	}
 };
+
+int Mod(int &rhs, const int m);
+string Transform(const int X, const int Y);
 
 void reset_daemon();
 void init();
-int Mod(int &rhs, const int m);
-string Transform(const int X, const int Y);
+
+int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff);
 
 int user_login(string username, const char* ip, const int port);
 int user_relogin(string username, const char* ip, const int port);
 int user_logout(string username, const char* ip, const int port, const int kick = 0);
 
-int get_room_list(const int start_num, int * reslist);
+int get_user_list(const int start_num, const int request_num, string * reslist, int &totnum);
 int create_room(string username);
 int join_room(string username, const int roomid);
 int left_room(string username);
@@ -80,6 +68,8 @@ int ready_operator(string username, const int isReady);
 int start_operator(string username, const char *A, const char *p)
 int click_operator(string username, const int X, const int Y);
 int check_operator(string username, const char X0, const char Y0, const char X1, const char Y1);
+
+void draw_plane(char *A, const char X0, const char Y0, const char X1, const char Y1);
 void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1);
 
 int check_user(string username);

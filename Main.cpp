@@ -15,7 +15,6 @@ Log logop;
 
 map<string, int> usermap; // first-username second-userid
 UserInfo userlist[MaxUserNum];
-char operatorbuffer[MaxUserNum][10];
 int useri;
 map<int, pair<int, int> > roommap; // first-roomid second<Aplayerid, Bplayerid>
 int roomlist[MaxRoomNum];
@@ -26,256 +25,26 @@ int main()
     reset_daemon();
 	init();
 
-	int serverstate; /* server initialize */
+	Server server;
+	int serverstate = server.Initialize(); /* server initialize */
 	logop.Initialize(serverstate);
 	if(serverstate == ERROR)
 	{
 		logop.Close();
 		exit(-1);
-	}		
+	}
 
+	server.callback = work;
 	while(1)
 	{
-		/* recv */
-
-		/* login state */
-		if(/* pack = login */)
-		{
-			string username = logop.username;
-			string password; /* from packet */
-			int sqlres;
-
-			sqlres = check_user(username);
-			if(!sqlres)
-			{
-				/* send no such user */
-				logop.Server_Log(_Connect, "failed(improper username).");
-				continue;
-			}
-			sqlres = check_password(username, password);
-			if(!sqlres)
-			{
-				/* send password error */
-				logop.Server_Log(_Connect, "failed(wrong) password).");
-				continue;
-			}
-			// login op
-			int res = user_login(username, logop.ip, logop.port);
-			//if(res == ERROR) /* too many user, add in future (maybe) */
-			if(res == REPEAT) // kick
-			{
-				if(user_relogin(username, logop.ip, logop.port) == OK)
-				{
-					/* send user last state */
-					continue;
-				}
-				map<string, int>::iterator userit;
-				userit = usermap.find(username);
-				/* send kick to userlist[userit->second].ip[userlist[userit->second].port] */
-				continue;
-			}
-			/* common login */
-			/* send login success */
-			continue;
-		}
-		if(/* pack = logout */)
-		{
-			int kickoff; /* from packet */
-			user_logout(logop.user, logop.ip, logop.port, kickoff);
-		}
-
-		/* searching state */
-		if(/* pack = get room list */)
-		{
-			int start_num; /* from packet */
-			int reslist[OnePageRoomNum];
-			int resnum = get_room_list(start_num, reslist);
-			/* send back room list */
-			continue;
-		}
-		if(/* pack = create room */)
-		{
-			int roomid = create_room(logop.user);
-			// if(roomid == CreateRoomError) /* no more free room, do in future */
-			/* send back roomid */
-			continue;
-		}
-		if(/* pack = join room */)
-		{
-			int roomid; /* get from packet */
-			int res = join_room(logop.user, roomid);
-			if(res == FULL || res == NoExist)
-			{
-				/* send back error */
-			}
-			else
-			{
-				/* send back roomid */
-			}
-			
-			continue;
-		}
-		if(/* pack = left room */)
-		{
-			int res = left_room(logop.user);
-			if(res != NoRoom)
-				logop.Game_Log(_Leave, res);
-			/* send back success */
-
-			continue;
-		}
-
-		/* room state */
-		if(/* pack = get room state */)
-		{
-			int ready; /* get from pack */
-			int res = ready_operator(logop.user, ready);
-			
-			map<string, int>::iterator userit;
-			userit = usermap.find(logop.user);
-			UserInfo &user = userlist[userit->second];
-			map<int pair<int, int> >::iterator roomit;
-			roomit = roommap.find(user.roomid);
-			
-			if(res == GetMap)
-			{
-				/* send to user.ip[user.port] */
-				int opponent = user.side ? roomit->second->first : roomit->second->second;
-				/* send to userlist[opponent].ip[userlist[opponent].port] */
-			}
-			
-			continue;
-		}
-
-		/* start state */
-		if(/* pack = chessboard */)
-		{
-			char A[ChessSize * ChessSize]; /* from packet */
-			char p[2 * PlaneNum]; /* from packet */
-			int res = start_operator(logop.user, A, p);
-
-			if(res == Start)
-			{
-				map<string, int>::iterator userit;
-				userit = usermap.find(logop.user);
-				UserInfo &user = userlist[userit->second];
-				map<int pair<int, int> >::iterator roomit;
-				roomit = roommap.find(user.roomid);
-
-				/* send to userlist[roomit->second->first] first op (0) */
-				/* send to userlist[roomit->second->first] last op (1) */
-				logop.Game_Log(_Start, roomit->first);
-			}
-			continue;
-		}
-
-		/* operate state & waiting state */
-		if(/* pack = click */)
-		{
-			char X; /* get from packet */
-			char Y; /* get from packet */
-			int res = click_operator(logop.user, X, Y);
-			
-			map<string, int>::iterator userit;
-			userit = usermap.find(logop.user);
-			UserInfo &user = userlist[userit->second];
-			map<int pair<int, int> >::iterator roomit;
-			roomit = roommap.find(user.roomid);
-			int opponent = user.side ? roomit->second->first : roomit->second->second;
-
-			operatorbuffer[userit->second][0] = 0;
-			operatorbuffer[opponent][0] = 1; /* click by other side */
-			operatorbuffer[opponent][1] = X;
-			operatorbuffer[opponent][2] = Y;
-
-			/* send to operator result by res */
-
-			continue;
-		}
-		if(/* pack = check */)
-		{
-			char X0; /* get from packet */
-			char Y0; /* get from packet */
-			char X1; /* get from packet */
-			char Y1; /* get from packet */
-			int res = check_operator(logop.user, X0, Y0, X1, Y1);
-
-			map<string, int>::iterator userit;
-			userit = usermap.find(logop.user);
-			UserInfo &user = userlist[userit->second];
-			map<int pair<int, int> >::iterator roomit;
-			roomit = roommap.find(user.roomid);
-			int opponent = user.side ? roomit->second->first : roomit->second->second;
-
-			operatorbuffer[userit->second][0] = 0;
-			if(res != GameEnd)
-			{
-				operatorbuffer[opponent][0] = 2; /* check by other side */
-				operatorbuffer[opponent][1] = X0;
-				operatorbuffer[opponent][2] = Y0;
-				operatorbuffer[opponent][3] = X1;
-				operatorbuffer[opponent][4] = Y1;
-			}
-			else
-			{
-				operatorbuffer[opponent][0] = 3; /* Game End */
-			}
-
-			/* send to operator result by res */
-
-			continue;
-		}
-		if(/* pack = empty */)
-		{
-			map<string, int>::iterator userit;
-			userit = usermap.find(logop.user);
-
-			if(operatorbuffer[userit->second][0] == 0)
-				/* send back heartbeats */;
-			else
-				/* send back operatorbuffer */;
-			continue;
-		}
+		if(server.Mainactivity() == NOPACK)
+			usleep(100000);
 	}
 
 	logop.Close();
     return 0;
 }
 
-void reset_daemon()
-{
-	pid_t pid;
-	if((pid = fork()))
-		exit(0);	//是父进程，则结束父进程
-	else if(pid < 0)
-		exit(1);	//fork失败，退出
-	
-	//是第一子进程，后台继续执行
-	setsid();		//第一子进程成为新的会话组长和进程组长
-	//与控制终端分离
-	if((pid = fork()))
-		exit(0);	//是第一子进程，结束第一子进程
-	else if(pid < 0)
-		exit(1);	//fork失败，退出
-	//是第二子进程，继续。第二子进程不再是会话组长
-	
-	//for(i = 0; i < NOFILE; ++i)
-	//	close(i);
-		//关闭从父进程继承打开的文件描述符，节省系统资源
-		//但这里需要输出回显，因此不关闭
-
-	//chdir("/root/");	//改变工作目录到root，这里只需要打印，所以不需要
-	umask(0);			//重设文件创建掩模，防止守护进程创建的文件存取位被父进程修改
-	return;
-}
-void init()
-{
-	usermap.clear();
-	roommap.clear();
-	useri = 0;
-	memset(roomlist, 0, sizeof(roomlist));
-	roomi = 0;
-}
 int Mod(int &rhs, const int m)
 {
 	return rhs >= m ? rhs-=m : rhs;
@@ -314,6 +83,482 @@ string Transform(const char X, const char Y)
 	return res;
 }
 
+void reset_daemon()
+{
+	pid_t pid;
+	if((pid = fork()))
+		exit(0);	//是父进程，则结束父进程
+	else if(pid < 0)
+		exit(1);	//fork失败，退出
+	
+	//是第一子进程，后台继续执行
+	setsid();		//第一子进程成为新的会话组长和进程组长
+	//与控制终端分离
+	if((pid = fork()))
+		exit(0);	//是第一子进程，结束第一子进程
+	else if(pid < 0)
+		exit(1);	//fork失败，退出
+	//是第二子进程，继续。第二子进程不再是会话组长
+	
+	//for(i = 0; i < NOFILE; ++i)
+	//	close(i);
+		//关闭从父进程继承打开的文件描述符，节省系统资源
+		//但这里需要输出回显，因此不关闭
+
+	//chdir("/root/");	//改变工作目录到root，这里只需要打印，所以不需要
+	umask(0);			//重设文件创建掩模，防止守护进程创建的文件存取位被父进程修改
+	return;
+}
+void init()
+{
+	usermap.clear();
+	roommap.clear();
+	useri = 0;
+	memset(roomlist, 0, sizeof(roomlist));
+	roomi = 0;
+}
+
+int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
+{
+	logop.ip = inet_ntoa(client_addr.sin_addr);
+	logop.port = client_addr.port;
+	logop.nbytes = nbytes;
+	logop.user.assign(buffer + 2, UserNameLength);
+	logop.Server_Log(_Recv);
+
+	char status = buffer[0];
+	char op = buffer[1];
+	char *load = buffer + 22;
+
+	char sndbuffer[BuffLength];
+	int sndbufferlength = 0;
+
+	int TaihouDaisuki = 1;
+	while(TaihouDaisuki)
+	{
+		map<string, int>::iterator userit;
+		userit = usermap.find(logop.user);
+
+		/* kick */
+		if(userit != NULL && userlist[userit->second].tbuff[0] == KickPack) 
+		{
+			sndbuffer[0] = SPECIAL_STATUS;
+			sndbuffer[1] = SND_KICK;
+			sndbufferlength = 2;
+
+			break;
+		}
+		if(status == SPECIAL_STATUS)
+		{
+			if(userit == NULL || strcmp(userlist[userit->second].ip, logop.ip) || userlist[userit->second].port != logop.port)
+				return OK;
+
+			user_logout(logop.user, logop.ip, logop.port, 1);
+			sndbuffer[0] = SPECIAL_STATUS;
+			sndbuffer[1] = SND_WAIT;
+			sndbufferlength = 2;
+
+			break;
+		}
+
+
+		/* log in */
+		if(status == LOGIN_STATUS)
+	    {
+			sndbuffer[0] = LOGIN_STATUS;
+	    	if(op == RCV_LOG_IN)
+	    	{
+				sndbuffer[1] = SND_LOG_IN;
+
+	    		string password(load, PasswordLength);
+	    		int sqlres;
+    
+	    		sqlres = check_user(logop.user);
+	    		if(!sqlres)
+	    		{
+					sndbuffer[2] = ERROR;
+					strcpy(sndbuffer + 3, "Error: No such user.");
+					sndbufferlength = strlen(sndbuffer) + 1;
+
+	    			logop.Server_Log(_Connect, "failed(improper username).");
+					break;
+	    		}
+
+				sqlres = check_password(username, password);
+	    		if(!sqlres)
+	    		{
+	    			sndbuffer[2] = ERROR;
+					strcpy(sndbuffer + 3, "Error: Wrong password.");
+					sndbufferlength = strlen(sndbuffer) + 1;
+
+	    			logop.Server_Log(_Connect, "failed(wrong password).");
+	    			break;
+	    		}
+
+				int res = user_login(username, logop.ip, logop.port);
+				//if(res == ERROR) /* too many user, add in future (maybe) */
+				if(res == REPEAT)
+				{
+					if(user_relogin(username, logop.ip, logop.port) == OK)
+					{
+						sndbuffer[2] = OK;
+						strcpy(sndbuffer + 3, "Warning: Your account has just logged out in another machine.");
+						sndbufferlength = strlen(sndbuffer) + 1;
+
+						break;
+					}
+
+					userlist[userit->second].tbuff[0] = KickPack;
+
+					sndbuffer[1] = SND_WAIT;
+					sndbufferlength = 2;
+
+					break;
+				}
+
+				sndbuffer[2] = OK;
+				strcpy(sndbuffer + 3, "Success: You have logged in successfully.");
+				sndbufferlength = strlen(sndbuffer) + 1;
+
+				break;
+	    	}
+			else
+				return ERROR;
+	    }
+    
+		/* search */
+		if(ststus == SEARCH_STATUS)
+		{
+			sndbuffer[0] = SEARCH_STATUS;
+			if(op == RCV_LOG_OUT)
+			{
+				if(userit == NULL || strcmp(userlist[userit->second].ip, logop.ip) || userlist[userit->second].port != logop.port)
+					return OK;
+
+				user_logout(logop.user, logop.ip, logop.port);
+				sndbuffer[1] = SND_WAIT;
+				sndbufferlength = 2;
+
+				break;
+			}
+			if(op == RCV_USER_LIST)
+			{
+				UserInfo &user = userlist[userit->second];
+
+				if(user.tbuff[0] == InvitePack)
+	    		{
+					sndbuffer[1] = SND_IVT;
+					memcpy(sndbuffer + 2, user.tbuff[1], UserNameLength);
+					sndbufferlength = 2 + UserNameLength;
+	    			
+					break;
+	    		}
+
+				user.tbuff[0] = NonePack;
+
+				int start_num = int(load[0]);
+				int request_num = int(load[1]);
+				string reslist[MaxUserNum];
+				int totnum = 0;
+				int resnum = get_user_list(start_num, request_num, reslist, totnum);
+
+				sndbuffer[1] = SND_USER_LIST;
+				sndbuffer[2] = char(resnum);
+				sndbuffer[3] = char(totnum);
+				sndbufferlength = 4;
+				for(int i = 0; i < resnum; ++i, sndbufferlength += UserNameLength)
+					memcpy(sndbuffer + sndbufferlength, reslist[i].c_str, UserNameLength;
+
+				break;
+			}
+			if(op == RCV_BATTLE_REQ)
+			{
+				UserInfo &user = userlist[userit->second];
+
+				if(user.tbuff[0] != NonePack)
+				{
+					if(user.tbuff[0] == WaitingPack)
+					{
+						sndbuffer[1] = SND_WAIT;
+						sndbufferlength = 2;
+
+						break;
+					}
+					if(user.tbuff[0] == InviteRequestPack)
+					{
+						if(user.tbuff[1] != 'X')
+						{
+							int roomid = 0;
+							for(int i = 1; i <= 4; ++i)
+								roomid = roomid * 10 + user.tbuff[i] - '0';
+							join_room(logop.user, roomid);	
+						}
+
+						sndbuffer[1] = SND_ROOM_INFO;
+						for(int i = 1; i <= 4; ++i)
+							sndbuffer[i + 1] = user.tbuff[i];
+						sndbufferlength = 6;
+
+						break;
+					}
+				}
+
+				string friendname(load, UserNameLength);
+				map<string, int>::iterator friendit;
+	    		friendit = usermap.find(friendname);
+
+				user.tbuff[0] = WaitingPack;
+				userlist[friendit->second].tbuff[0] = InvitePack;
+				mcmcpy(userlist[friendit->second].tbuff + 1, logop.name.c_str(), UserNameLength);
+
+				sndbuffer[1] = SND_WAIT;
+				sndbufferlength = 2;
+
+				break;
+			}
+			if(op == RCV_HANDLE_IVT)
+			{
+				if(user.tbuff[0] == InviteRequestPack)
+				{
+					sndbuffer[1] = SND_ROOM_INFO;
+					for(int i = 1; i <= 4; ++i)
+						sndbuffer[i + 1] = user.tbuff[i];
+					sndbufferlength = 6;
+
+					break;
+				}
+
+				string friendname(load, UserNameLength);
+				int result = int(load[20]);
+
+				map<string, int>::iterator friendit;
+	    		friendit = usermap.find(friendname);
+
+				user.tbuff[0] = InviteRequestPack;
+				userlist[friendit->second].tbuff[0] = InviteRequestPack;
+				if(result == OK)
+				{
+					int lasti = roomi;
+	    			for(int i = 0; i < MaxRoomNum; ++i, Mod(++roomi, MaxRoomNum))
+	    				if(roomlist[roomi] == Available)
+	    					break;
+					// if(useri == lasti)
+	    			roomlist[roomi] = Full;
+
+	    			for(int i = 4, roomid = roomi; i >= 1; --i, roomid /= 10)
+		    			user.tbuff[i] = userlist[friendit->second].tbuff[i] = '0' + roomid % 10;
+	    			roommap.insert(make_pair(roomi, make_pair(Empty, Empty));
+
+					join_room(logop.user, roomi);
+
+					sndbuffer[1] = SND_ROOM_INFO;
+					for(int i = 1; i <= 4; ++i)
+						sndbuffer[i + 1] = user.tbuff[i];
+					sndbufferlength = 6;
+
+					break;
+				}
+				else
+				{
+					for(int i = 1; i <= 4; ++i)
+						user.tbuff[i] = userlist[friendit->second].tbuff[i] = 'X';
+				}
+			}
+			return ERROR;
+		}
+
+		/* room */
+		if(status == ROOM_STATUS)
+		{
+			sndbuffer[0] = ROOM_STATUS;
+			if(op == RCV_LEAVE)
+			{
+				int res = left_room(logop.user);
+				if(res != NoRoom)
+					logop.Game_Log(_Leave, res);
+				
+				user.tbuff[0] = NonPack;
+
+				sndbuffer[1] = SND_WAIT;
+				sndbufferlength = 2;
+
+				break;
+			}
+			if(op == RCV_READY)
+			{
+				if(uesr.tbuff[0] == ReadyPack)
+				{
+					sndbuffer[1] = SND_READY;
+					sndbufferlength = 2;
+
+					break;
+				}
+
+				int ready = int(load[0]);
+				int res = ready_operator(logop.user, ready);
+
+				map<int pair<int, int> >::iterator roomit;
+	    		roomit = roommap.find(user.roomid);
+				int opponent = user.side ? roomit->second->first : roomit->second->second;
+
+				if(res == GetMap)
+				{
+					user.tbuff[0] = Userlist[opponent].tbuff[0] = ReadyPack;
+
+					sndbuffer[1] = SND_READY;
+					sndbufferlength = 2;
+
+					break;
+				}
+
+				sndbuffer[1] = SND_STATE;
+				sndbuffer[2] = Userlist[opponent].plane == Ready;
+				sndbufferlength = 3;
+
+				break;
+			}
+			if(op == RCV_CHESS)
+			{
+				if(user.tbuff[0] == WaitPack)
+				{
+					sndbuffer[1] = SND_WAIT;
+					sndbufferlength = 2;
+					
+					break;
+				}
+				if(user.tbuff[0] == StartPack)
+				{
+					sndbuffer[1] = SND_START;
+					sndbuffer[2] = user.side;
+					sndbufferlength = 3;
+
+					break;
+				}
+
+				user.tbuff[0] = WaitPack;
+
+				char p[2 * PlaneNum];
+				memcpy(p, load, 2 * PlaneNum);
+				int res = start_operator(logop.user, p);
+
+				if(res == Start)
+				{
+					map<int pair<int, int> >::iterator roomit;
+	    			roomit = roommap.find(user.roomid);
+
+					userlist[roomit->second->first].tbuff[0] = userlist[roomit->second->second].tbuff[0] = StartPack;
+					logop.Game_Log(_Start, roomit->first);
+
+					sndbuffer[1] = SND_START;
+					sndbuffer[2] = user.side;
+					sndbufferlength = 3;
+
+					break;
+				}
+				sndbuffer[1] = SND_WAIT;
+				sndbufferlength = 2;
+					
+				break;
+			}
+			return ERROR;
+		}
+    
+		/* game */
+		if(status == BATTLE_STATUS)
+		{
+			sndbuffer[0] = BATTLE_STATUS;
+			if(op == RCV_WAIT)
+			{
+				map<int pair<int, int> >::iterator roomit;
+				roomit = roommap.find(user.roomid);
+				UserInfo &opponent = user.side ? userlist[roomit->second->first] : userlist[roomit->second->second];
+
+				if(opponent.roomid == NoRoom)
+				{
+					sndbuffer[1] = SND_DROP;
+					sndbufferlength = 2;
+					left_room(logop.user);
+				}
+				else if(user.tbuff[0] == ClickPack)
+				{
+					sndbuffer[1] = SND_CLICK_OP;
+					sndbuffer[2] = user.tbuff[1];
+					sndbuffer[3] = user.tbuff[2];
+					sndbufferlength = 4;
+				}
+				else if(user.tbuff[0] == CheckPack)
+				{
+					sndbuffer[1] = SND_CHECK_OP;
+					sndbuffer[2] = user.tbuff[1];
+					sndbuffer[3] = user.tbuff[2];
+					sndbuffer[4] = user.tbuff[3];
+					sndbuffer[5] = user.tbuff[4];
+					sndbuffer[6] = user.tbuff[5];
+					sndbufferlength = 7;
+				}
+				else
+				{
+					sndbuffer[1] = SND_WAIT;
+					sndbufferlength = 2;
+				}
+				break;
+			}
+			if(op == RCV_CLICK)
+			{
+				char X = load[0];
+				char Y = load[1];
+				int res = click_operator(logop.user, X, Y);
+
+				map<int pair<int, int> >::iterator roomit;
+	    		roomit = roommap.find(user.roomid);
+	    		int opponent = user.side ? roomit->second->first : roomit->second->second;
+
+				user.tbuff[0] = NonPack;
+				userlist[opponent].tbuff[0] = ClickPack;
+				userlist[opponent].tbuff[1] = X;
+				userlist[opponent].tbuff[2] = Y;
+
+				sndbuffer[1] = SND_CLICK_RES;
+				sndbuffer[2] = res;
+				sndbufferlength = 3;
+
+				break;
+			}
+			if(op == RCV_CHECK)
+			{
+				char X0 = load[0];
+				char Y0 = load[1];
+				char X1 = load[2];
+				char Y1 = load[3];
+				int res = check_operator(log.user, X0, Y0, X1, Y1);
+
+				map<int pair<int, int> >::iterator roomit;
+	    		roomit = roommap.find(user.roomid);
+	    		int opponent = user.side ? roomit->second->first : roomit->second->second;
+
+				user.tbuff[0] = NonPack;
+				userlist[opponent].tbuff[0] = CheckPack;
+				userlist[opponent].tbuff[1] = X0;
+				userlist[opponent].tbuff[2] = Y0;
+				userlist[opponent].tbuff[3] = X1;
+				userlist[opponent].tbuff[4] = Y1;
+				userlist[opponent].tbuff[5] = res == GameEnd ? 1 : 0;
+
+				sndbuffer[1] = SND_CHECK_RES;
+				sndbuffer[2] = ((res == Right) || (res == GameEnd));
+				sndbuffer[3] = res == GameEnd;
+				sndbufferlength = 4;
+
+				break;
+			}
+			return ERROR;
+		}
+	}
+
+	logop.nbytes = server->Send(sndbuffer, client_addr, sndbufferlength);
+	logop.Server_Log(_Send);
+}
+
 int user_login(string username, const char* ip, const int port)
 {
 	map<string, int>::iterator userit;
@@ -334,13 +579,14 @@ int user_login(string username, const char* ip, const int port)
 			continue;
 	if(useri == lasti)
 		return ERROR;
-	
-	UserInfo &user = userlist[userit->second];
+	usermap.insert(makepair(username, useri));
+
+	UserInfo &user = userlist[useri];
 	memcpy(user.ip, ip, IPLength);
 	user.port = port;
 	userlist[userit->second].kick = 0;
 	user.roomid = NoRoom;
-	usermap.insert(makepair(username, useri));
+	user.tbuff[0] = NonePack;
 
 	logop.Server_Log(_Connect, username + " login successfully.");
 	return OK;
@@ -350,18 +596,23 @@ int user_relogin(string username, const char* ip, const int port)
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
+
 	if(userlist[userit->second].kick == 2)
 		return OK;
-
 	if(!userlist[userit->second].kick)
 		return ERROR;
-	memcpy(userlist[userit->second].ip, ip, IPLength);
-	userlist[userit->second].port = port;
-	userlist[userit->second].kick = 2;
+
+	UserInfo &user = userlist[useri];	
+	memcpy(user.ip, ip, IPLength);
+	user.port = port;
+	user.kick = 2;
+	user.roomid = NoRoom;
+	user.tbuff[0] = NonePack;
 
 	logop.Server_Log(_Reconnect, username + " relogin successfully");
 	return OK;
 }
+
 int user_logout(string username, const char* ip, const int port, const int kick)
 {
 	map<string, int>::iterator userit;
@@ -373,6 +624,8 @@ int user_logout(string username, const char* ip, const int port, const int kick)
 	if(kick)
 	{
 		userlist[userit->second].kick = 1;
+		if(userlist[userit->second].roomid != NoRoom)
+			left_room(uesrname);
 		logop.Server_Log(_Disconnect, username + " was kicked off.");
 	}
 	else
@@ -387,52 +640,27 @@ int user_logout(string username, const char* ip, const int port, const int kick)
 	return OK;
 }
 
-int get_room_list(const int start_num, int * reslist)
-{
-	map<int pair<int, int> >::iterator roomit;
-	roomit = roommap.begin();
-	int i = 0, cnt = 0;
-	while(roomit != roommap.end())
-	{
-		if(cnt == start_num + OnePageRoomNum)
-			break;
-		if((roomit->second->first == Empty) ^ (roomit->second->second == Empty))
-			reslist[i++] = roomit->first, ++cnt;
-		if(i == OnePageRoomNum)
-			i-=OnePageRoomNum;
-	}
-	return (!i && cnt) ? OnePageRoomNum : i;
-}
-int create_room(string username)
+int get_user_list(const int start_num, const int request_num, string * reslist, int &totnum)
 {
 	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
-	if(user->roomid != NoRoom)
-		return user->roomid;
+	for(userit = usermape.begin(); userit != usermap.end(); ++userit)
+	{
+		if(cnt == start_num)
+			break;
+		++totnum;
+	}
+	int res = 0;
+	for(; userit != usermap.end(); ++userit)
+	{
+		reslist[res++] = userit->first;
+		if(res == request_num)
+			break;
+	}
 
-	int lasti = roomi;
-	for(int i = 0; i < MaxRoomNum; ++i, Mod(++roomi, MaxRoomNum))
-		if(roomlist[i] != Available)
-			continue;
-	if(roomi == lasti)
-		return CreateRoomError;	
-
-	roomlist[roomi] = Waiting;
-	roommap.insert(makepair(roomi, makepair(userit->second, Empty)));
-	user.roomid = roomi;
-	user.side = 0;
-	user.plane = Unready;
-
-	logop.Game_Log(_Join, roomi);
-	return roomi;
+	return res;
 }
 int join_room(string username, const int roomid)
 {
-	if(roomid >= MaxRoomNum)
-		return ERROR;
-
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
 		return ERROR;
@@ -512,7 +740,7 @@ int ready_operator(string username, const int isReady)
 	
 	return (user.plane == Ready && opponent != Empty && userlist[opponent].plane == Ready) ? GetMap : Waiting;
 }
-int start_operator(string username, const char *A, const char *p)
+int start_operator(string username, const char *p)
 {
 	map<string, int>::iterator userit;
 	if(!(userit = usermap.find(username)))
@@ -525,14 +753,18 @@ int start_operator(string username, const char *A, const char *p)
 		return ERROR;
 
 		user->plane = PlaneNum;
-		memcpy(user.A, A, ChessSize * ChessSize);
 		for(int i = 0; i < PlaneNum; ++i)
 		{
 			for(int j = 0; j <= 1; ++j)
 				user.planeX[j][i] = p++, user.plnaeY[j][i] = p++;
 			user.planeflag[i] = 1;
 		}
-		operatorbuffer[userit->second][0] = 0;
+
+		for(int i = 0; i < ChessSize; ++i)
+			for(int j = 0; j < ChessSize; ++j)
+				user.A[i][j] = NoPlane;
+		for(int i = 0; i < PlaneNum; ++i)
+			draw_plane(user.A, uesr.planeX[0][i], user.planeY[0][i], user.planeX[1][i], user.planeY[1][i]);
 
 		string Map = "";
 		for(int i = 0; i < ChessSize; ++i)
@@ -616,6 +848,23 @@ int check_operator(string username, const char X0, const char Y0, const char X1,
 	else
 		return Right;
 }
+void draw_plane(char *A, const char X0, const char Y0, const char X1, const char Y1)
+{
+	int basepos = X0 * ChessSize + Y0;
+	int k, pos;
+
+	if(X0 == X1)
+		k = Y0 < Y1 ? 0/* up */ : 1/* down */;
+	else
+		k = X0 < X1 ? 2/* left */ : 3/* right */;
+
+	A[basepos] = CritialHit;
+	for(int i = 1; i < PlaneSize; ++i)
+	{
+		pos = basepos + deltaX[k][i] * ChessSize + deltaY[k][i];
+		A[pos] = HitPlane;
+	}
+}
 void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1)
 {
 	int basepos = X0 * ChessSize + Y0;
@@ -628,7 +877,7 @@ void fill_plane(char *A, const char X0, const char Y0, const char X1, const char
 	{
 		pos = basepos + deltaX[k][i] * ChessSize + deltaY[k][i];
 		A[pos] = -A[pos];
-	}		
+	}
 }
 
 int check_user(string username)
