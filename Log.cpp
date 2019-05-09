@@ -71,6 +71,15 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
     Get_Time();
     switch(Type)
     {
+        case _Invite:
+            logfile << user << "[" << ip << "]" << " send a battle invitation to " << Append << endl;
+            break;
+        case _Accept:
+            logfile << user << "[" << ip << "]" << " accept the battle invitation from " << Append << endl;
+            break;
+        case _Refuse:
+            logfile << user << "[" << ip << "]" << " refuse the battle invitation from " << Append << endl;
+            break;
         case _Join:
             logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has joined currently." << endl;
             break;
@@ -89,12 +98,6 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
             break;
         case _Start:
             logfile << "Room<" << Room_ID << ">: " << "Game start." << endl;
-            break;
-        case _Pause:
-            logfile << "Room<" << Room_ID << ">: " << "Game paused, " << user << "[" << ip << "]" << " miss connection with server" << endl;
-            break;
-        case _Continue:
-            logfile << "Room<" << Room_ID << ">: " << "Game continued, " << user << "[" << ip << "]" << " has reconnected." << endl;
             break;
         case _Operate:
             logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " choose " << Append << endl;

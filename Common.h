@@ -7,6 +7,7 @@
 #define BuffLength          1000
 #define tBufferLength       100
 #define NOPACK              -1
+#define TimeLimit           10
 
 /* game */
 #define ChessSize           10

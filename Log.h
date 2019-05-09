@@ -18,8 +18,9 @@ public:
     };
     enum _Game_Type
     {
+        _Invite, _Accept, _Refuse,
         _Join, _Leave, _Ready, _Unready,
-        _GetMap, _Start, _Pause, _Continue,
+        _GetMap, _Start,
          _Operate, _Check, _Finish
     };
 

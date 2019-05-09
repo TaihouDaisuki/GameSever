@@ -15,6 +15,7 @@ Log logop;
 
 map<string, int> usermap; // first-username second-userid
 UserInfo userlist[MaxUserNum];
+int get_pack[MaxUserNum];
 int useri;
 map<int, pair<int, int> > roommap; // first-roomid second<Aplayerid, Bplayerid>
 int roomlist[MaxRoomNum];
@@ -33,10 +34,14 @@ int main()
 		logop.Close();
 		exit(-1);
 	}
-
 	server.callback = work;
+
+	time_t last_check_time;
+	time(&last_check_time);
 	while(1)
 	{
+		check_client(last_check_time);
+
 		if(server.Mainactivity() == NOPACK)
 			usleep(100000);
 	}
@@ -114,8 +119,43 @@ void init()
 	usermap.clear();
 	roommap.clear();
 	useri = 0;
-	memset(roomlist, 0, sizeof(roomlist));
 	roomi = 0;
+	memset(get_pack, 0 ,sizeof(get_pack));
+	memset(roomlist, 0, sizeof(roomlist));
+}
+
+void check_client(int &last_check_time)
+{
+	time_t check_time;
+	time(&check_time);
+	if(check_time - last_check_time < TimeLimit)
+		return;
+	
+	int drop_cnt = 0;
+	int drop_list[MaxUserNum];
+	for(int i = 0; i < MaxUserNum; ++i)
+	{
+		if(userlist[i].port == NoConnect)
+			continue;
+		if(get_pack[i])
+			get_pack[i] = 0;
+		else
+			drop_list[drop_cnt ++] = i;
+	}
+
+	for(int i = 0; i < drop_cnt; ++i)
+	{
+		if(userlist[i].roomid != NoRoom)
+			left_room(userlist[i]);
+
+		memcpy(logop.ip, userlist[i].ip, IPLength);
+		logop.port = userlist[i].port;
+		logop.Server_Log(logop._Missconnect);
+
+		userlist[i].port = NoConnect;
+		userlist[i].roomid = NoRoom;
+	}
+	last_check_time = check_time;
 }
 
 int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
@@ -124,7 +164,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.port = client_addr.port;
 	logop.nbytes = nbytes;
 	logop.user.assign(buffer + 2, UserNameLength);
-	logop.Server_Log(_Recv);
+	logop.Server_Log(logop._Recv);
 
 	char status = buffer[0];
 	char op = buffer[1];
@@ -138,6 +178,9 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	{
 		map<string, int>::iterator userit;
 		userit = usermap.find(logop.user);
+
+		if(userit != NULL)
+			get_pack[userit->second] = 1;
 
 		/* kick */
 		if(userit != NULL && userlist[userit->second].tbuff[0] == KickPack) 
@@ -180,7 +223,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					strcpy(sndbuffer + 3, "Error: No such user.");
 					sndbufferlength = strlen(sndbuffer) + 1;
 
-	    			logop.Server_Log(_Connect, "failed(improper username).");
+	    			logop.Server_Log(logop._Connect, "failed(improper username).");
 					break;
 	    		}
 
@@ -191,7 +234,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					strcpy(sndbuffer + 3, "Error: Wrong password.");
 					sndbufferlength = strlen(sndbuffer) + 1;
 
-	    			logop.Server_Log(_Connect, "failed(wrong password).");
+	    			logop.Server_Log(logop._Connect, "failed(wrong password).");
 	    			break;
 	    		}
 
@@ -291,7 +334,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 							int roomid = 0;
 							for(int i = 1; i <= 4; ++i)
 								roomid = roomid * 10 + user.tbuff[i] - '0';
-							join_room(logop.user, roomid);	
+							join_room(user, roomid);	
 						}
 
 						sndbuffer[1] = SND_ROOM_INFO;
@@ -306,6 +349,10 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				string friendname(load, UserNameLength);
 				map<string, int>::iterator friendit;
 	    		friendit = usermap.find(friendname);
+
+				string Append(friendname);
+				Append.append("[").append(userlist[friendit->second].ip).append("].");
+				logop.Game_Log(logop._Invite, 0, Append);
 
 				user.tbuff[0] = WaitingPack;
 				userlist[friendit->second].tbuff[0] = InvitePack;
@@ -334,6 +381,14 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				map<string, int>::iterator friendit;
 	    		friendit = usermap.find(friendname);
 
+				string Append(friendname);
+				Append.append("[").append(userlist[friendit->second].ip).append("].");
+				if(result == OK)
+					logop.Game_Log(logop._Accept, 0, Append);
+				else
+					logop.Game_Log(logop._Refuse, 0, Append);
+				
+
 				user.tbuff[0] = InviteRequestPack;
 				userlist[friendit->second].tbuff[0] = InviteRequestPack;
 				if(result == OK)
@@ -349,7 +404,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 		    			user.tbuff[i] = userlist[friendit->second].tbuff[i] = '0' + roomid % 10;
 	    			roommap.insert(make_pair(roomi, make_pair(Empty, Empty));
 
-					join_room(logop.user, roomi);
+					join_room(user, roomi);
 
 					sndbuffer[1] = SND_ROOM_INFO;
 					for(int i = 1; i <= 4; ++i)
@@ -373,9 +428,9 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			sndbuffer[0] = ROOM_STATUS;
 			if(op == RCV_LEAVE)
 			{
-				int res = left_room(logop.user);
+				int res = left_room(user);
 				if(res != NoRoom)
-					logop.Game_Log(_Leave, res);
+					logop.Game_Log(logop._Leave, res);
 				
 				user.tbuff[0] = NonPack;
 
@@ -395,7 +450,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				}
 
 				int ready = int(load[0]);
-				int res = ready_operator(logop.user, ready);
+				int res = ready_operator(user, ready);
 
 				map<int pair<int, int> >::iterator roomit;
 	    		roomit = roommap.find(user.roomid);
@@ -439,7 +494,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 				char p[2 * PlaneNum];
 				memcpy(p, load, 2 * PlaneNum);
-				int res = start_operator(logop.user, p);
+				int res = start_operator(user, p);
 
 				if(res == Start)
 				{
@@ -447,7 +502,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	    			roomit = roommap.find(user.roomid);
 
 					userlist[roomit->second->first].tbuff[0] = userlist[roomit->second->second].tbuff[0] = StartPack;
-					logop.Game_Log(_Start, roomit->first);
+					logop.Game_Log(logop._Start, roomit->first);
 
 					sndbuffer[1] = SND_START;
 					sndbuffer[2] = user.side;
@@ -477,7 +532,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				{
 					sndbuffer[1] = SND_DROP;
 					sndbufferlength = 2;
-					left_room(logop.user);
+					left_room(user);
 				}
 				else if(user.tbuff[0] == ClickPack)
 				{
@@ -507,7 +562,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			{
 				char X = load[0];
 				char Y = load[1];
-				int res = click_operator(logop.user, X, Y);
+				int res = click_operator(user, X, Y);
 
 				map<int pair<int, int> >::iterator roomit;
 	    		roomit = roommap.find(user.roomid);
@@ -530,7 +585,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				char Y0 = load[1];
 				char X1 = load[2];
 				char Y1 = load[3];
-				int res = check_operator(log.user, X0, Y0, X1, Y1);
+				int res = check_operator(user, X0, Y0, X1, Y1);
 
 				map<int pair<int, int> >::iterator roomit;
 	    		roomit = roommap.find(user.roomid);
@@ -556,7 +611,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	}
 
 	logop.nbytes = server->Send(sndbuffer, client_addr, sndbufferlength);
-	logop.Server_Log(_Send);
+	logop.Server_Log(logop._Send);
 }
 
 int user_login(string username, const char* ip, const int port)
@@ -588,7 +643,7 @@ int user_login(string username, const char* ip, const int port)
 	user.roomid = NoRoom;
 	user.tbuff[0] = NonePack;
 
-	logop.Server_Log(_Connect, username + " login successfully.");
+	logop.Server_Log(logop._Connect, username + " login successfully.");
 	return OK;
 }
 int user_relogin(string username, const char* ip, const int port)
@@ -609,7 +664,7 @@ int user_relogin(string username, const char* ip, const int port)
 	user.roomid = NoRoom;
 	user.tbuff[0] = NonePack;
 
-	logop.Server_Log(_Reconnect, username + " relogin successfully");
+	logop.Server_Log(logop._Reconnect, username + " relogin successfully");
 	return OK;
 }
 
@@ -625,8 +680,8 @@ int user_logout(string username, const char* ip, const int port, const int kick)
 	{
 		userlist[userit->second].kick = 1;
 		if(userlist[userit->second].roomid != NoRoom)
-			left_room(uesrname);
-		logop.Server_Log(_Disconnect, username + " was kicked off.");
+			left_room(userlist[userit->second]);
+		logop.Server_Log(logop._Disconnect, username + " was kicked off.");
 	}
 	else
 	{
@@ -634,7 +689,7 @@ int user_logout(string username, const char* ip, const int port, const int kick)
 		userlist[userit->second].roomid = NoRoom;
 		usermape.erase(userit->first);
 
-		logop.Server_Log(_Disconnect, username + " log out successfully");
+		logop.Server_Log(logop._Disconnect, username + " log out successfully");
 	}
 	
 	return OK;
@@ -659,12 +714,8 @@ int get_user_list(const int start_num, const int request_num, string * reslist, 
 
 	return res;
 }
-int join_room(string username, const int roomid)
+int join_room(UserInfo &user, const int roomid)
 {
-	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
 	if(user->roomid == roomid)
 		return OK;
 
@@ -688,15 +739,11 @@ int join_room(string username, const int roomid)
 	user.roomid = roomid;
 	user.plane = Unready;
 
-	logop.Game_Log(_Join, roomid);
+	logop.Game_Log(logop._Join, roomid);
 	return OK;
 }
-int left_room(string username)
+int left_room(UserInfo &user)
 {
-	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
 	if(user->roomid == NoRoom)
 		return NoRoom;
 	
@@ -719,18 +766,13 @@ int left_room(string username)
 	return tmproomid;
 }
 
-int ready_operator(string username, const int isReady)
+int ready_operator(UserInfo &user, const int isReady)
 {
-	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
-
 	user.plane = isReady ? Ready : Unready;
 	if(isReady)
-		logop.Game_Log(_Ready, user.roomid);
+		logop.Game_Log(logop._Ready, user.roomid);
 	else
-		logop.Game_Log(_Unready, user.roomid);
+		logop.Game_Log(logop._Unready, user.roomid);
 	
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user.roomid)))
@@ -740,13 +782,8 @@ int ready_operator(string username, const int isReady)
 	
 	return (user.plane == Ready && opponent != Empty && userlist[opponent].plane == Ready) ? GetMap : Waiting;
 }
-int start_operator(string username, const char *p)
+int start_operator(UserInfo &user, const char *p)
 {
-	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
-
 	if(user->plane != PlaneNum)
 	{
 		if(!(user->plane == Ready))	
@@ -769,20 +806,15 @@ int start_operator(string username, const char *p)
 		string Map = "";
 		for(int i = 0; i < ChessSize; ++i)
 			Map.append(A[i * ChessSize], ChessSize).append("\n");
-		logop.Game_Log(_GetMap, user->roomid, Map);
+		logop.Game_Log(logop._GetMap, user->roomid, Map);
 	}
 
 	int opponent = user.side ? roomit->second->first : roomit->second->second;
 	
 	return (userlist[opponent].plane == Ready) ? GetMap : Start;
 }
-int click_operator(string username, const char X, const char Y)
+int click_operator(UserInfo &user, const char X, const char Y)
 {
-	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
-	
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user.roomid)))
 		return ERROR;
@@ -801,16 +833,11 @@ int click_operator(string username, const char X, const char Y)
 	else
 		Append.append("Aircraft nose.");
 	opponent.A[pos] = -opponent.A[pos];
-	logop.Game_Log(_Operate, roomit->first, Append);
+	logop.Game_Log(logop._Operate, roomit->first, Append);
 	return -opponent.A[pos];
 }
-int check_operator(string username, const char X0, const char Y0, const char X1, const char Y1)
+int check_operator(UserInfo &user, const char X0, const char Y0, const char X1, const char Y1)
 {
-	map<string, int>::iterator userit;
-	if(!(userit = usermap.find(username)))
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
-
 	map<int pair<int, int> >::iterator roomit;
 	if(!(roomit = roommap.find(user.roomid)))
 		return ERROR;
@@ -829,20 +856,20 @@ int check_operator(string username, const char X0, const char Y0, const char X1,
 	if(flag == -1)
 	{
 		Append.append("wrong");
-		logop.Game_Log(_Check, roomit->first, Append);
+		logop.Game_Log(logop._Check, roomit->first, Append);
 		return Wrong;
 	}
 	if(!opponent.planeflag[flag])
 		return Right;
 	
 	Append.append("right");
-	logop.Game_Log(_Check, roomit->first, Append);
+	logop.Game_Log(logop._Check, roomit->first, Append);
 	fill_plane(opponent.A, X0, Y0, X1, Y1);
 	if(!(--opponent.plane))
 	{
 		user->plane = Unready;
 		opponent->plane = Unready;
-		logop.Game_Log(_Finish, roomit->first);
+		logop.Game_Log(logop._Finish, roomit->first);
 		return GameEnd;
 	}
 	else
