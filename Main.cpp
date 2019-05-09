@@ -152,6 +152,13 @@ void check_client(int &last_check_time)
 		logop.port = userlist[i].port;
 		logop.Server_Log(logop._Missconnect);
 
+		map<string, int>::iterator userit;
+		for(userit = usermap.begin(); userit != usermap.end(); userit++)
+			if(userit->second == i)
+			{
+				usermap.erase(userit);
+				break;
+			}
 		userlist[i].port = NoConnect;
 		userlist[i].roomid = NoRoom;
 	}
