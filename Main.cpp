@@ -210,12 +210,11 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.user.assign(buff + 2, UserNameLength);
 	logop.Server_Log(logop._Recv);
 
-	cout << "Recv from" << logop.ip << "[" << logop.port <<"] user: " << logop.user << endl;
-
 	char status = buff[0];
 	char op = buff[1];
 	char *load = buff + 22;
 
+	cout << "Recv from" << logop.ip << "[" << logop.port <<"] user: " << logop.user << endl;
 	cout << "status = " << (int)status << " op = " << (int)op << endl;
 
 	char sndbuffer[BuffLength];
