@@ -4,6 +4,7 @@ CC = g++
 
 Main:Main.cpp  ./target/Server.o ./target/Log.o  ./target/Mysql.o 
 	$(CC)  $< ./target/Server.o ./target/Log.o  ./target/Mysql.o  $(MYSQLFLAGS) -o $@ -std=c++11 > make.log 2>&1
+	-rm ./target/*.o
 
 
 ./target/Server.o: ./include/Server.h

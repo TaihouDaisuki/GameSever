@@ -15,20 +15,28 @@ map<int, pair<int, int>> roommap; // first-roomid second<Aplayerid, Bplayerid>
 int roomlist[MaxRoomNum];
 int roomi;
 
+int output(class Server* s,int count,struct sockaddr_in client_addr,char* buff)
+{
+    printf("server recv:length:%d, data: %s\n", count, buff);
+    printf("recv from: %s:%d\n", inet_ntoa(client_addr.sin_addr), client_addr.sin_port);
+    cout << "send:" << s->Send(buff, client_addr, count) << endl;
+	return 1;
+}
+
 int main()
 {
-	reset_daemon();
+	//reset_daemon();
 	init();
 
 	Server server;
-	int serverstate = server.Initialize(); /* server initialize */
+	int serverstate = server.Initialize(21114); /* server initialize */
 	logop.Initialize(serverstate);
 	if (serverstate == ERROR)
 	{
 		logop.Close();
 		exit(-1);
 	}
-	server.callback = work;
+	server.dealpack = work;
 
 	time_t last_check_time;
 	time(&last_check_time);
@@ -38,6 +46,7 @@ int main()
 
 		if (server.MainActivity() == NOPACK)
 			usleep(100000);
+
 	}
 
 	logop.Close();
@@ -128,26 +137,26 @@ void reset_daemon()
 {
 	pid_t pid;
 	if ((pid = fork()))
-		exit(0); //是父进程，则结束父进程
+		exit(0); //是父进程，则结束父进�?
 	else if (pid < 0)
-		exit(1); //fork失败，退出
+		exit(1); //fork失败，退�?
 
 	//是第一子进程，后台继续执行
 	setsid(); //第一子进程成为新的会话组长和进程组长
-	//与控制终端分离
+	//与控制终端分�?
 	if ((pid = fork()))
-		exit(0); //是第一子进程，结束第一子进程
+		exit(0); //是第一子进程，结束第一子进�?
 	else if (pid < 0)
-		exit(1); //fork失败，退出
-	//是第二子进程，继续。第二子进程不再是会话组长
+		exit(1); //fork失败，退�?
+	//是第二子进程，继续。第二子进程不再是会话组�?
 
 	//for(i = 0; i < NOFILE; ++i)
 	//	close(i);
-	//关闭从父进程继承打开的文件描述符，节省系统资源
-	//但这里需要输出回显，因此不关闭
+	//关闭从父进程继承打开的文件描述符，节省系统资�?
+	//但这里需要输出回显，因此不关�?
 
-	//chdir("/root/");	//改变工作目录到root，这里只需要打印，所以不需要
-	umask(0); //重设文件创建掩模，防止守护进程创建的文件存取位被父进程修改
+	//chdir("/root/");	//改变工作目录到root，这里只需要打印，所以不需�?
+	umask(0); //重设文件创建掩模，防止守护进程创建的文件存取位被父进程修�?
 	return;
 }
 void init()
@@ -208,6 +217,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.nbytes = nbytes;
 	logop.user.assign(buff + 2, UserNameLength);
 	logop.Server_Log(logop._Recv);
+
+	cout<<"has recv from"<<logop.ip<<":"<<logop.port<<"   data:"<<buff<<endl;
 
 	char status = buff[0];
 	char op = buff[1];

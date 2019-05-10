@@ -20,6 +20,7 @@ using namespace std;
 /* public */
 Server::Server()
 {
+    strcpy(ip,"0.0.0.0");
     // nothing to do
 }
 Server::~Server()
@@ -27,15 +28,15 @@ Server::~Server()
     // nothing to do
 }
 
-int Server::Initialize()
+int Server::Initialize(int Port)
 {
+    this->port=Port;
     server_fd = socket(AF_INET, SOCK_DGRAM, 0);  //创建网络通信对象
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = inet_addr(ip);
+    addr.sin_port = htons(this->port);
+    addr.sin_addr.s_addr = inet_addr("0.0.0.0");
 
-    //绑定socket对象与通信链接
     int ret = bind(server_fd, (struct sockaddr *)&addr, sizeof(addr));
     if (ret < 0)
     {

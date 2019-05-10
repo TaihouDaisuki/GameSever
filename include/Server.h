@@ -38,7 +38,7 @@ public:
     Server();
     ~Server();
 
-    int Initialize();
+    int Initialize(int);
 
     int MainActivity();
 
