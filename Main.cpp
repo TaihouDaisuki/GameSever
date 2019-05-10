@@ -495,6 +495,17 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 				break;
 			}
+
+			map<int,pair<int, int>>::iterator roomit;
+			roomit = roommap.find(user.roomid);
+			int opponent = user.side ? roomit->second.first : roomit->second.second;
+			if (userlist[opponent].roomid != user.roomid)
+			{
+				sndbuffer[1] = SND_DROP;
+				sndbufferlength = 2;
+				break;
+			}
+
 			if (op == RCV_READY)
 			{
 				if (user.tbuff[0] == ReadyPack)
@@ -507,11 +518,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 				int ready = int(load[0]);
 				int res = ready_operator(user, ready);
-
-				map<int,pair<int, int>>::iterator roomit;
-				roomit = roommap.find(user.roomid);
-				int opponent = user.side ? roomit->second.first : roomit->second.second;
-
 				if (res == GetMap)
 				{
 					user.tbuff[0] = userlist[opponent].tbuff[0] = ReadyPack;
@@ -670,6 +676,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 	logop.nbytes = server->Send(sndbuffer, client_addr, sndbufferlength);
 	logop.Server_Log(logop._Send);
+	return OK;
 }
 
 int user_login(string username, const char *ip, const int port)
