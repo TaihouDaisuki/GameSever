@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "Server.h"
+
 #include<sys/types.h> 
 #include<sys/stat.h>
 #include <string>
