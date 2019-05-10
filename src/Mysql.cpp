@@ -29,7 +29,7 @@ Mysql::~Mysql()
 int Mysql::check_user(string username)
 {
 	string sqlqry;
-	sqlqry = "select count(*) from user where account = \'";
+	sqlqry = "select count(*) from user where username = \'";
 	sqlqry += username;
 	sqlqry.append("\';");
 
@@ -45,7 +45,7 @@ int Mysql::check_user(string username)
 int Mysql::check_password(string username, string password)
 {
 	string sqlqry;
-	sqlqry = "select count(*) from user where account = \'";
+	sqlqry = "select count(*) from user where username = \'";
 	sqlqry += username;
 	sqlqry.append("\'").append(" and password_MD5 = md5(\'");
 	sqlqry += password;
