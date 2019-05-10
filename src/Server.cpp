@@ -52,7 +52,7 @@ int Server::Recv()
 {
     int res = 0;
     socklen_t len = sizeof(client_addr);
-    if(res = recvfrom(server_fd, buff, BuffLength, 0, (struct sockaddr*)&client_addr, &len) < 0)
+    if((res = recvfrom(server_fd, buff, BuffLength, 0, (struct sockaddr*)&client_addr, &len))) < 0)
     {
         //cerr << "Failed to receive from client" << endl;
         return ERROR;
@@ -62,7 +62,7 @@ int Server::Recv()
 int Server::Send(char *buff, struct sockaddr_in client_addr, int count)
 {
     int res = 0;
-    if(res = sendto(server_fd, buff, BuffLength, 0, (struct sockaddr*)&client_addr, sizeof(struct sockaddr)) < 0)
+    if((res = sendto(server_fd, buff, BuffLength, 0, (struct sockaddr*)&client_addr, sizeof(struct sockaddr))) < 0)
     {
        // cerr << "Failed to send to " << inet_ntoa(client_addr.sin_addr.s_addr) << "[" << ntohs(client_addr.port) << "]" << endl;
         return ERROR;
