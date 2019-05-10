@@ -278,7 +278,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				{
 					sndbuffer[2] = ERROR;
 					strcpy(sndbuffer + 3, "Error: No such user.");
-					sndbufferlength = strlen(sndbuffer) + 1;
+					sndbufferlength = 3 + strlen("Error: No such user.") + 1;
 
 					logop.Server_Log(logop._Connect, "failed(improper username).");
 					break;
@@ -289,7 +289,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				{
 					sndbuffer[2] = ERROR;
 					strcpy(sndbuffer + 3, "Error: Wrong password.");
-					sndbufferlength = strlen(sndbuffer) + 1;
+					sndbufferlength = 3 + strlen("Error: Wrong password.")) + 1;
 
 					logop.Server_Log(logop._Connect, "failed(wrong password).");
 					break;
@@ -303,7 +303,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					{
 						sndbuffer[2] = OK;
 						strcpy(sndbuffer + 3, "Warning: Your account has just logged out in another machine.");
-						sndbufferlength = strlen(sndbuffer) + 1;
+						sndbufferlength = 3 + strlen("Warning: Your account has just logged out in another machine.") + 1;
 
 						break;
 					}
@@ -318,7 +318,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 				sndbuffer[2] = OK;
 				strcpy(sndbuffer + 3, "Success: You have logged in successfully.");
-				sndbufferlength = strlen(sndbuffer) + 1;
+				sndbufferlength = 3 + strlen("Success: You have logged in successfully.") + 1;
 
 				break;
 			}
