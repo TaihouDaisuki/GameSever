@@ -600,7 +600,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					sndbuffer[1] = SND_CLICK_OP;
 					sndbuffer[2] = user.tbuff[1];
 					sndbuffer[3] = user.tbuff[2];
-					sndbufferlength = 4;
+					sndbuffer[4] = user.tbuff[3];
+					sndbufferlength = 5;
 				}
 				else if (user.tbuff[0] == CheckPack)
 				{
@@ -610,7 +611,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					sndbuffer[4] = user.tbuff[3];
 					sndbuffer[5] = user.tbuff[4];
 					sndbuffer[6] = user.tbuff[5];
-					sndbufferlength = 7;
+					sndbuffer[7] = user.tbuff[6];
+					sndbufferlength = 8;
 				}
 				else
 				{
@@ -633,6 +635,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				userlist[opponent].tbuff[0] = ClickPack;
 				userlist[opponent].tbuff[1] = X;
 				userlist[opponent].tbuff[2] = Y;
+				userlist[opponent].tbuff[3] = res;
 
 				sndbuffer[1] = SND_CLICK_RES;
 				sndbuffer[2] = res;
@@ -658,7 +661,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				userlist[opponent].tbuff[2] = Y0;
 				userlist[opponent].tbuff[3] = X1;
 				userlist[opponent].tbuff[4] = Y1;
-				userlist[opponent].tbuff[5] = res == GameEnd ? 1 : 0;
+				userlist[opponent].tbuff[5] = res == Right ? 1 : 0;
+				userlist[opponent].tbuff[6] = res == GameEnd ? 1 : 0;
 
 				sndbuffer[1] = SND_CHECK_RES;
 				sndbuffer[2] = ((res == Right) || (res == GameEnd));
