@@ -1,12 +1,8 @@
 #include <iostream>
-
+#include "./include/Main.h"
 #include <map>
 #include <string>
 
-#include "./include/Main.h"
-#include "./include/Log.h"
-#include "./include/Server.h"
-#include "./include/Mysql.h"
 
 Log logop;
 Mysql mysqlop;
@@ -619,7 +615,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				roomit = roommap.find(user.roomid);
 				int opponent = user.side ? roomit->second.first : roomit->second.second;
 
-				user.tbuff[0] = NonPack;
+				user.tbuff[0] = NonePack;
 				userlist[opponent].tbuff[0] = ClickPack;
 				userlist[opponent].tbuff[1] = X;
 				userlist[opponent].tbuff[2] = Y;
@@ -702,7 +698,7 @@ int user_login(string username, const char *ip, const int port)
 int user_relogin(string username, const char *ip, const int port)
 {
 	map<string, int>::iterator userit;
-	uesrit = usermap.find(uesrname);
+	userit = usermap.find(username);
 
 	if (userit == usermap.end())
 		return ERROR;
@@ -790,17 +786,17 @@ int join_room(string username, const int roomid)
 	if (roomit == roommap.end())
 		return NoExist;
 
-	if (!((roomit->second->first == Empty) | (roomit->second->second == Empty)))
+	if (!((roomit->second.first == Empty) | (roomit->second.second == Empty)))
 		return Full;
 
-	if (roomit->second->first == Empty)
+	if (roomit->second.first == Empty)
 	{
-		roomit->second->first = userit->second;
+		roomit->second.first = userit->second;
 		user.side = 0;
 	}
 	else
 	{
-		roomit->second->second = userit->second;
+		roomit->second.second = userit->second;
 		user.side = 1;
 	}
 	user.roomid = roomid;
@@ -815,18 +811,18 @@ int left_room(UserInfo &user)
 		return NoRoom;
 
 	map<int, pair<int, int>>::iterator roomit;
-	roomit = usermap.find(user->roomid);
-	if (roomit == usermap.end())
+	roomit = roommap.find(user.roomid);
+	if (roomit == roommap.end())
 		return ERROR;
 
 	int tmproomid = user.roomid;
 	user.roomid = NoRoom;
 	if (!user.side)
-		roomit->second->first = Empty;
+		roomit->second.first = Empty;
 	else
-		roomit->second->second = Empty;
+		roomit->second.second = Empty;
 
-	if ((roomit->second->first == Empty) & (roomit->second->second == Empty))
+	if ((roomit->second.first == Empty) & (roomit->second.second == Empty))
 	{
 		roomlist[roomit->first] = Available;
 		roommap.erase(roomit);
@@ -847,7 +843,7 @@ int ready_operator(UserInfo &user, const int isReady)
 	if (roomit == roommap.end())
 		return ERROR;
 
-	int opponent = user.side ? roomit->second->first : roomit->second->second;
+	int opponent = user.side ? roomit->second.first : roomit->second.second;
 
 	return (user.plane == Ready && opponent != Empty && userlist[opponent].plane == Ready) ? GetMap : Waiting;
 }
@@ -862,7 +858,7 @@ int start_operator(UserInfo &user, const char *p)
 		for (int i = 0; i < PlaneNum; ++i)
 		{
 			for (int j = 0; j <= 1; ++j)
-				user.planeX[j][i] = *(p++), user.plnaeY[j][i] = *(p++);
+				user.planeX[j][i] = *(p++), user.planeY[j][i] = *(p++);
 			user.planeflag[i] = 1;
 		}
 
@@ -881,7 +877,7 @@ int start_operator(UserInfo &user, const char *p)
 	roomit = roommap.find(user.roomid);
 	if (roomit == roommap.end())
 		return ERROR;
-	int opponent = user.side ? roomit->second->first : roomit->second->second;
+	int opponent = user.side ? roomit->second.first : roomit->second.second;
 
 	return (userlist[opponent].plane == Ready) ? GetMap : Start;
 }
@@ -891,7 +887,7 @@ int click_operator(UserInfo &user, const char X, const char Y)
 	roomit = roommap.find(user.roomid);
 	if (roomit == roommap.end())
 		return ERROR;
-	UserInfo &opponent = user.side ? userlist[roomit->second->first] : userlist[roomit->second->second];
+	UserInfo &opponent = user.side ? userlist[roomit->second.first] : userlist[roomit->second.second];
 
 	int pos = ChessSize * X + Y;
 	if (opponent.A[pos] < 0)
@@ -915,7 +911,7 @@ int check_operator(UserInfo &user, const char X0, const char Y0, const char X1, 
 	roomit = roommap.find(user.roomid);
 	if (roomit == roommap.end())
 		return ERROR;
-	UserInfo &opponent = user.side ? userlist[roomit->second->first] : userlist[roomit->second->second];
+	UserInfo &opponent = user.side ? userlist[roomit->second.first] : userlist[roomit->second.second];
 
 	int flag = -1;
 	for (int i = 0; i < PlaneNum; ++i)

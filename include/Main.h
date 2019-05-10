@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Common.h"
-#include "Server.h"
-
 #include<sys/types.h> 
 #include<sys/stat.h>
 #include <string>
 #include <cstring>
+
+#include "Log.h"
+#include "Server.h"
+#include "Mysql.h"
 
 const int deltaX[4][PlaneSize] = 
 {
@@ -71,7 +73,7 @@ int left_room(UserInfo &user);
 
 int ready_operator(UserInfo &user, const int isReady);
 int start_operator(UserInfo &user, const char *p);
-int click_operator(UserInfo &user, const int X, const int Y);
+int click_operator(UserInfo &user, const char X, const char Y);
 int check_operator(UserInfo &user, const char X0, const char Y0, const char X1, const char Y1);
 
 void draw_plane(char *A, const char X0, const char Y0, const char X1, const char Y1);
