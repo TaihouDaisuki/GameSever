@@ -1,7 +1,8 @@
-#pragma once
+//#pragma once
 
 #include "Common.h"
-
+#include<sys/types.h> 
+#include<sys/stat.h>
 #include <string>
 #include <cstring>
 
@@ -43,7 +44,7 @@ struct UserInfo
         kick = 0;
         roomid = NoRoom;
         plane = Unready;
-        tbuffer[0] = NonePack;
+        tbuff[0] = NonePack;
     }
 };
 
@@ -53,7 +54,7 @@ string Transform(const int X, const int Y);
 void reset_daemon();
 void init();
 
-void check_client(int &last_check_time);
+void check_client(time_t &last_check_time);
 
 int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff);
 
@@ -63,11 +64,11 @@ int user_logout(string username, const char* ip, const int port, const int kick 
 
 int get_user_list(const int start_num, const int request_num, string * reslist, int &totnum);
 int create_room(string username);
-int join_room(UserInfo &user, const int roomid);
+int join_room(string username, const int roomid);
 int left_room(UserInfo &user);
 
 int ready_operator(UserInfo &user, const int isReady);
-int start_operator(UserInfo &user, const char *A, const char *p)
+int start_operator(UserInfo &user, const char *p);
 int click_operator(UserInfo &user, const int X, const int Y);
 int check_operator(UserInfo &user, const char X0, const char Y0, const char X1, const char Y1);
 

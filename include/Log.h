@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 
 #include "Common.h"
 
@@ -28,8 +28,8 @@ public:
     int port, nbytes;
     string user;
 private:
-    const int Cur_TimeZone = 8;
-    const char Logfile_Name[15] = "server.log";
+    int Cur_TimeZone;
+    char Logfile_Name[15];
 
     ofstream logfile;
 

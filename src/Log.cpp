@@ -1,4 +1,4 @@
-#include "Log.h"
+#include "../include/Log.h"
 
 #include <iostream>
 #include <cstdio>
@@ -8,6 +8,8 @@
 /* public */
 Log::Log()
 {
+    Cur_TimeZone=8;
+    strcpy(Logfile_Name,"server.log");
     logfile.open(Logfile_Name, ios::app | ios::out);
     if(!logfile)
     {

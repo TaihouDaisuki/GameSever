@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 
 #include "Common.h"
 
@@ -27,8 +27,8 @@ public:
     int (*callback)(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff);
 
 private:
-    const int port = 19434;
-    const char ip[IPLength] = "0.0.0.0";
+    int port;
+    char ip[9];
 
     struct sockaddr_in server_addr;
     int server_fd;

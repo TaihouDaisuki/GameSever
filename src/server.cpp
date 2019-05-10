@@ -1,4 +1,4 @@
-#include "Server.h"
+#include "../include/Server.h"
 
 #include <iostream>
 
@@ -40,7 +40,7 @@ int Server::Initialize()
     if (ret < 0)
     {
         cerr << "Error: bind" << endl;
-        return Error;
+        return ERROR;
     }
     
     cout << "----------Server Start Running----------" << endl;
@@ -75,7 +75,7 @@ int Server::MainActivity()
     socklen_t len = sizeof(client_addr);
     int res = recvfrom(server_fd, buff, BuffLength, MSG_DONTWAIT, (struct sockaddr *)&client_addr, &len);
     if (res <= 0)
-        return NoPack;
+        return NOPACK;
     else
         return dealpack(this, res, client_addr, buff);
 }
