@@ -2,7 +2,8 @@
 #include "../include/Mysql.h"
 
 #include <iostream>
-
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 
@@ -30,8 +31,7 @@ int Mysql::check_user(string username)
 {
 	string sqlqry;
 	sqlqry = "select count(*) from user where username = \'";
-	sqlqry += username;
-	sqlqry.append("\';");
+	sqlqry.append(username.c_str()).append("\';");
 
 	mysql_query(mysql, sqlqry.c_str());
 	result = mysql_store_result(mysql);
@@ -46,10 +46,8 @@ int Mysql::check_password(string username, string password)
 {
 	string sqlqry;
 	sqlqry = "select count(*) from user where username = \'";
-	sqlqry += username;
-	sqlqry.append("\'").append(" and password_MD5 = md5(\'");
-	sqlqry += password;
-	sqlqry.append("\');");
+	sqlqry.append(username.c_str()).append("\'");
+	sqlqry.append(" and password_MD5 = md5(\'").append(password.c_str()).append("\');");
 
 	mysql_query(mysql, sqlqry.c_str());
 	result = mysql_store_result(mysql);

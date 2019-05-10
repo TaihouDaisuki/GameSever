@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <mysql.h>
 #include <string>
+
 using namespace std;
 
 class Mysql

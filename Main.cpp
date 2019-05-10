@@ -224,7 +224,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	char op = buff[1];
 	char *load = buff + 22;
 
-	cout << "status = " << (int)status << "op = " << (int)op << endl;
+	cout << "status = " << (int)status << " op = " << (int)op << endl;
 
 	char sndbuffer[BuffLength];
 	int sndbufferlength = 0;
@@ -270,7 +270,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 				string password(load, PasswordLength);
 
-				cout << "password = " << password << endl;
 				int sqlres;
 
 				sqlres = mysqlop.check_user(logop.user);
@@ -289,7 +288,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				{
 					sndbuffer[2] = ERROR;
 					strcpy(sndbuffer + 3, "Error: Wrong password.");
-					sndbufferlength = 3 + strlen("Error: Wrong password.")) + 1;
+					sndbufferlength = 3 + strlen("Error: Wrong password.") + 1;
 
 					logop.Server_Log(logop._Connect, "failed(wrong password).");
 					break;
