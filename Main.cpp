@@ -218,11 +218,13 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.user.assign(buff + 2, UserNameLength);
 	logop.Server_Log(logop._Recv);
 
-	cout<<"has recv from"<<logop.ip<<":"<<logop.port<<"   data:"<<buff<<endl;
+	cout << "Recv from" << logop.ip << "[" << logop.port <<"] user: " << logop.user << endl;
 
 	char status = buff[0];
 	char op = buff[1];
 	char *load = buff + 22;
+
+	cout << "status = " << (int)status << "op = " << (int)op << endl;
 
 	char sndbuffer[BuffLength];
 	int sndbufferlength = 0;
@@ -267,6 +269,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				sndbuffer[1] = SND_LOG_IN;
 
 				string password(load, PasswordLength);
+
+				cout << "password = " << password << endl;
 				int sqlres;
 
 				sqlres = mysqlop.check_user(logop.user);
@@ -702,6 +706,7 @@ int user_login(string username, const char *ip, const int port)
 	if (useri == lasti)
 		return ERROR;
 	usermap.insert(make_pair(username, useri));
+	cout << "userid = " << useri << endl;
 
 	UserInfo &user = userlist[useri];
 	memcpy(user.ip, ip, IPLength);
