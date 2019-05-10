@@ -4,9 +4,10 @@
 #include <list>
 #include <string>
 
+#include "./include/Main.h"
 #include "./include/Log.h"
 #include "./include/Server.h"
-#include "./include/Main.h"
+#include "./include/Mysql.h"
 
 Log logop;
 Mysql mysqlop;
