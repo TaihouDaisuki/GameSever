@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common.h"
+
 #include <stdbool.h>
 #include <mysql.h>
 
