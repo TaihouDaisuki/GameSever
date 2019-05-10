@@ -61,7 +61,7 @@ void Log::Server_Log(_Server_Type Type, string Append)
             logfile << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" << endl;
             break;
         case _Send:
-            logfile << "Send " << nbytes << " bytes(s) from " << ip << "[" << port << "]" << endl;
+            logfile << "Send " << nbytes << " bytes(s) to " << ip << "[" << port << "]" << endl;
             break;
         default:
             break;

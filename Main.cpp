@@ -15,14 +15,6 @@ map<int, pair<int, int>> roommap; // first-roomid second<Aplayerid, Bplayerid>
 int roomlist[MaxRoomNum];
 int roomi;
 
-int output(class Server* s,int count,struct sockaddr_in client_addr,char* buff)
-{
-    printf("server recv:length:%d, data: %s\n", count, buff);
-    printf("recv from: %s:%d\n", inet_ntoa(client_addr.sin_addr), client_addr.sin_port);
-    cout << "send:" << s->Send(buff, client_addr, count) << endl;
-	return 1;
-}
-
 int main()
 {
 	//reset_daemon();
@@ -359,7 +351,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				int request_num = int(load[1]);
 				string reslist[MaxUserNum];
 				int totnum = 0;
-				int resnum = get_user_list(start_num, request_num, reslist, totnum);
+				int resnum = get_user_list(logop.user, start_num, request_num, reslist, totnum);
 
 				sndbuffer[1] = SND_USER_LIST;
 				sndbuffer[2] = char(resnum);
@@ -450,11 +442,14 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				userlist[friendit->second].tbuff[0] = InviteRequestPack;
 				if (result == OK)
 				{
-					int lasti = roomi;
+					int flag = 0;
 					for (int i = 0; i < MaxRoomNum; ++i, Mod(++roomi, MaxRoomNum))
 						if (roomlist[roomi] == Available)
+						{
+							flag = 1;
 							break;
-					// if(useri == lasti)
+						}
+					// if(!flag)
 					roomlist[roomi] = Full;
 
 					for (int i = 4, roomid = roomi; i >= 1; --i, roomid /= 10)
@@ -698,11 +693,16 @@ int user_login(string username, const char *ip, const int port)
 		return REPEAT;
 	}
 
-	int lasti = useri;
+	int flag = 0;
 	for (int i = 0; i < MaxUserNum; ++i, Mod(++useri, MaxUserNum))
-		if (userlist[i].port != NoConnect)
+	{
+		if (userlist[useri].port != NoConnect)
 			continue;
-	if (useri == lasti)
+		flag = 1;
+		break;
+	}
+		
+	if (!flag)
 		return ERROR;
 	usermap.insert(make_pair(username, useri));
 	cout << "userid = " << useri << endl;
@@ -710,7 +710,7 @@ int user_login(string username, const char *ip, const int port)
 	UserInfo &user = userlist[useri];
 	memcpy(user.ip, ip, IPLength);
 	user.port = port;
-	userlist[userit->second].kick = 0;
+	user.kick = 0;
 	user.roomid = NoRoom;
 	user.tbuff[0] = NonePack;
 
@@ -770,7 +770,7 @@ int user_logout(string username, const char *ip, const int port, const int kick)
 	return OK;
 }
 
-int get_user_list(const int start_num, const int request_num, string *reslist, int &totnum)
+int get_user_list(string username, const int start_num, const int request_num, string *reslist, int &totnum)
 {
 	totnum = 0;
 
@@ -779,11 +779,14 @@ int get_user_list(const int start_num, const int request_num, string *reslist, i
 	{
 		if (totnum == start_num)
 			break;
-		++totnum;
+		if (userit->first != username)
+			++totnum;
 	}
 	int res = 0;
 	for (; userit != usermap.end(); ++userit)
 	{
+		if(userit->first == username)
+			continue;
 		reslist[res++] = userit->first;
 		if (res == request_num)
 			break;
