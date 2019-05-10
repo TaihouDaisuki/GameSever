@@ -20,4 +20,4 @@ Main:Main.cpp  ./target/Server.o ./target/Log.o  ./target/Mysql.o
 
 .PHONY:clean all
 clean:    
-	-rm Main ./target/*.o
+	-rm Main ./target/*.o *.log
