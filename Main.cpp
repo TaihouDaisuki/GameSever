@@ -182,22 +182,22 @@ void check_client(time_t &last_check_time)
 
 	for (int i = 0; i < drop_cnt; ++i)
 	{
-		if (userlist[i].roomid != NoRoom)
-			left_room(userlist[i]);
+		if (userlist[drop_list[i]].roomid != NoRoom)
+			left_room(userlist[drop_list[i]]);
 
-		memcpy(logop.ip, userlist[i].ip, IPLength);
-		logop.port = userlist[i].port;
+		memcpy(logop.ip, userlist[drop_list[i]].ip, IPLength);
+		logop.port = userlist[drop_list[i]].port;
 		logop.Server_Log(logop._Missconnect);
 
 		map<string, int>::iterator userit;
 		for(userit = usermap.begin(); userit != usermap.end(); userit++)
-			if(userit->second == i)
+			if(userit->second == drop_list[i])
 			{
 				usermap.erase(userit);
 				break;
 			}
-		userlist[i].port = NoConnect;
-		userlist[i].roomid = NoRoom;
+		userlist[drop_list[i]].port = NoConnect;
+		userlist[drop_list[i]].roomid = NoRoom;
 	}
 	last_check_time = check_time;
 }
