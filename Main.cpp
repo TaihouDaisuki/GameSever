@@ -583,15 +583,14 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 		if (status == BATTLE_STATUS)
 		{
 			UserInfo &user = userlist[userit->second];
+			map<int,pair<int, int>>::iterator roomit;
+			roomit = roommap.find(user.roomid);
+			int opponent = user.side ? roomit->second.first : roomit->second.second;
 
 			sndbuffer[0] = BATTLE_STATUS;
 			if (op == RCV_WAIT)
 			{
-				map<int ,pair<int, int>>::iterator roomit;
-				roomit = roommap.find(user.roomid);
-				UserInfo &opponent = user.side ? userlist[roomit->second.first] : userlist[roomit->second.second];
-
-				if (opponent.roomid == NoRoom)
+				if (opponent == Empty || userlist[opponent].rooid != user.roomid)
 				{
 					sndbuffer[1] = SND_DROP;
 					sndbufferlength = 2;
@@ -629,10 +628,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				char Y = load[1];
 				int res = click_operator(user, X, Y);
 
-				map<int,pair<int, int>>::iterator roomit;
-				roomit = roommap.find(user.roomid);
-				int opponent = user.side ? roomit->second.first : roomit->second.second;
-
 				user.tbuff[0] = NonePack;
 				userlist[opponent].tbuff[0] = ClickPack;
 				userlist[opponent].tbuff[1] = X;
@@ -652,10 +647,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				char X1 = load[2];
 				char Y1 = load[3];
 				int res = check_operator(user, X0, Y0, X1, Y1);
-
-				map<int,pair<int, int>>::iterator roomit;
-				roomit = roommap.find(user.roomid);
-				int opponent = user.side ? roomit->second.first : roomit->second.second;
 
 				user.tbuff[0] = NonePack;
 				userlist[opponent].tbuff[0] = CheckPack;
