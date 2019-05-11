@@ -609,20 +609,20 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				else if (user.tbuff[0] == ClickPack)
 				{
 					sndbuffer[1] = SND_CLICK_OP;
-					sndbuffer[2] = user.tbuff[1];
-					sndbuffer[3] = user.tbuff[2];
-					sndbuffer[4] = user.tbuff[3];
+					sndbuffer[2] = user.tbuff[1]; //X
+					sndbuffer[3] = user.tbuff[2]; //Y
+					sndbuffer[4] = user.tbuff[3]; //Res
 					sndbufferlength = 5;
 				}
 				else if (user.tbuff[0] == CheckPack)
 				{
 					sndbuffer[1] = SND_CHECK_OP;
-					sndbuffer[2] = user.tbuff[1];
-					sndbuffer[3] = user.tbuff[2];
-					sndbuffer[4] = user.tbuff[3];
-					sndbuffer[5] = user.tbuff[4];
-					sndbuffer[6] = user.tbuff[5];
-					sndbuffer[7] = user.tbuff[6];
+					sndbuffer[2] = user.tbuff[1]; //X0
+					sndbuffer[3] = user.tbuff[2]; //Y0
+					sndbuffer[4] = user.tbuff[3]; //X1
+					sndbuffer[5] = user.tbuff[4]; //Y1
+					sndbuffer[6] = user.tbuff[5]; //Res
+					sndbuffer[7] = user.tbuff[6]; //End
 					sndbufferlength = 8;
 				}
 				else
