@@ -468,19 +468,19 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					roommap.insert(make_pair(roomi, make_pair(Empty, Empty)));
 
 					join_room(logop.user, roomi);
-
-					sndbuffer[1] = SND_ROOM_INFO;
-					for(int i = 1; i <= 4; ++i)
-						sndbuffer[i + 1] = user.tbuff[i];
-					sndbufferlength = 6;
-
-					break;
 				}
 				else
 				{
 					for (int i = 1; i <= 4; ++i)
 						user.tbuff[i] = userlist[friendit->second].tbuff[i] = 'X';
 				}
+
+				sndbuffer[1] = SND_ROOM_INFO;
+				for(int i = 1; i <= 4; ++i)
+					sndbuffer[i + 1] = user.tbuff[i];
+				sndbufferlength = 6;
+
+				break;
 			}
 			return ERROR;
 		}
