@@ -46,22 +46,24 @@ void Log::Server_Log(_Server_Type Type, string Append)
     switch(Type)
     {
         case _Connect:
-            logfile << "Get a connection from " << ip <<  "[" << port << "], " << Append << endl;
+            logfile << "===Server Log=== " << "Get a connection from " << ip <<  "[" << port << "], " << Append << endl;
             break;
         case _Disconnect:
-            logfile << ip << "[" << port << "] disconnected from sever, reason: " << Append << endl;
+            logfile << "===Server Log=== " << ip << "[" << port << "] disconnected from sever, reason: " << Append << endl;
             break;
         case _Missconnect:
-            logfile << "Sever miss the connection to " << ip << "[" << port << "]" << endl;
+            logfile << "===Server Log=== " << "Sever miss the connection to " << ip << "[" << port << "]" << endl;
             break;
         case _Reconnect:
-            logfile << "Get a reconnect request from " << ip << "[" << port << "], " << Append << endl;
+            logfile << "===Server Log=== " << "Get a reconnect request from " << ip << "[" << port << "], " << Append << endl;
             break;
         case _Recv:
-            logfile << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" << endl;
+            logfile << "===Server Log=== " << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" 
+                << ", username =  " << user << ", status = " << status << ", op = " << op << endl;
             break;
         case _Send:
-            logfile << "Send " << nbytes << " bytes(s) to " << ip << "[" << port << "]" << endl;
+            logfile << "===Server Log=== " << "Send " << nbytes << " bytes(s) to " << ip << "[" << port << "]"
+                << ", username =  " << user << ", status = " << status << ", op = " << op << endl;
             break;
         default:
             break;
@@ -74,41 +76,41 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
     switch(Type)
     {
         case _Invite:
-            logfile << user << "[" << ip << "]" << " send a battle invitation to " << Append << endl;
+            logfile << "===Game Log=== " << user << "[" << ip << "]" << " send a battle invitation to " << Append << endl;
             break;
         case _Accept:
-            logfile << user << "[" << ip << "]" << " accept the battle invitation from " << Append << endl;
+            logfile << "===Game Log=== "  << user << "[" << ip << "]" << " accept the battle invitation from " << Append << endl;
             break;
         case _Refuse:
-            logfile << user << "[" << ip << "]" << " refuse the battle invitation from " << Append << endl;
+            logfile << "===Game Log=== "  << user << "[" << ip << "]" << " refuse the battle invitation from " << Append << endl;
             break;
         case _Join:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has joined currently." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has joined currently." << endl;
             break;
         case _Leave:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has left currently." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has left currently." << endl;
             break;
         case _Ready:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has ready." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has ready." << endl;
             break;
         case _Unready:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " is unready." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " is unready." << endl;
             break;
         case _GetMap:
-            logfile << "Room<" << Room_ID << ">: " << "Get " << user << "[" << ip << "]" << " initial map:" << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << "Get " << user << "[" << ip << "]" << " initial map:" << endl;
             logfile << Append;
             break;
         case _Start:
-            logfile << "Room<" << Room_ID << ">: " << "Game start." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << "Game start." << endl;
             break;
         case _Operate:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " choose " << Append << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " choose " << Append << endl;
             break;
         case _Check:
-            logfile << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " check " << Append << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " check " << Append << endl;
             break;
         case _Finish:
-            logfile << "Room<" << Room_ID << ">: " << "Game finished, " << user << "[" << ip << "]" << " win." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << "Game finished, " << user << "[" << ip << "]" << " win." << endl;
             break;
         default:
             break;

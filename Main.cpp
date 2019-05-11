@@ -209,13 +209,15 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.nbytes = nbytes;
 	logop.user.assign(buff + 2, UserNameLength);
 	logop.Server_Log(logop._Recv);
+	logop.status = buff[0];
+	logop.op = buff[1];
 
-	char status = buff[0];
-	char op = buff[1];
+	char status = logop.status;
+	char op = logop.op;
 	char *load = buff + 22;
 
-	cout << "Recv from" << logop.ip << "[" << logop.port <<"] user: " << logop.user << endl;
-	cout << "status = " << (int)status << " op = " << (int)op << endl;
+	//cout << "Recv from" << logop.ip << "[" << logop.port <<"] user: " << logop.user << endl;
+	//cout << "status = " << (int)status << " op = " << (int)op << endl;
 
 	char sndbuffer[BuffLength];
 	int sndbufferlength = 0;
@@ -267,8 +269,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				if (!sqlres)
 				{
 					sndbuffer[2] = ERROR;
-					strcpy(sndbuffer + 3, "Error: No such user.");
-					sndbufferlength = 3 + strlen("Error: No such user.") + 1;
+					strcpy(sndbuffer + 3, "No such user.");
+					sndbufferlength = 3 + strlen("No such user.") + 1;
 
 					logop.Server_Log(logop._Connect, "failed(improper username).");
 					break;
@@ -278,8 +280,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				if (!sqlres)
 				{
 					sndbuffer[2] = ERROR;
-					strcpy(sndbuffer + 3, "Error: Wrong password.");
-					sndbufferlength = 3 + strlen("Error: Wrong password.") + 1;
+					strcpy(sndbuffer + 3, "Wrong password.");
+					sndbufferlength = 3 + strlen("Wrong password.") + 1;
 
 					logop.Server_Log(logop._Connect, "failed(wrong password).");
 					break;
@@ -292,8 +294,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					if (user_relogin(logop.user, logop.ip, logop.port) == OK)
 					{
 						sndbuffer[2] = OK;
-						strcpy(sndbuffer + 3, "Warning: Your account has just logged out in another machine.");
-						sndbufferlength = 3 + strlen("Warning: Your account has just logged out in another machine.") + 1;
+						strcpy(sndbuffer + 3, "Your account has just logged out in another machine.");
+						sndbufferlength = 3 + strlen("Your account has just logged out in another machine.") + 1;
 
 						break;
 					}
@@ -307,8 +309,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				}
 
 				sndbuffer[2] = OK;
-				strcpy(sndbuffer + 3, "Success: You have logged in successfully.");
-				sndbufferlength = 3 + strlen("Success: You have logged in successfully.") + 1;
+				strcpy(sndbuffer + 3, "You have logged in successfully.");
+				sndbufferlength = 3 + strlen("You have logged in successfully.") + 1;
 
 				break;
 			}

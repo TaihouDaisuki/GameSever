@@ -26,6 +26,7 @@ public:
 
     char ip[IPLength];
     int port, nbytes;
+    int status, op;
     string user;
 private:
     int Cur_TimeZone;
