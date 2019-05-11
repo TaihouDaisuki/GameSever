@@ -1,6 +1,6 @@
 # 基于UDP的炸飞机游戏服务器
-*developed by TaihouDaisuki (UDP Socket by YYY-my roommate)*  
-[Client](https://github.com/TaihouDaisuki/AircraftWarClient)
+*developed by TaihouDaisuki (UDP Socket by APTXOUS(yyy)-my roommate)*  
+[Client developed by kagaya-my roommate](https://github.com/TaihouDaisuki/AircraftWarClient)
 
 ****
 ## 基本交互逻辑  
