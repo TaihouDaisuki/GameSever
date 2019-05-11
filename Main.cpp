@@ -209,6 +209,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.nbytes = nbytes;
 	logop.user.assign(buff + 2, UserNameLength);
 	logop.Server_Log(logop._Recv);
+
 	logop.status = buff[0];
 	logop.op = buff[1];
 
@@ -232,7 +233,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			get_pack[userit->second] = 1;
 
 		/* kick */
-		if (userit != usermap.end()&& userlist[userit->second].tbuff[0] == KickPack)
+		if (userit != usermap.end() && userlist[userit->second].tbuff[0] == KickPack 
+			&& !strcmp(userlist[userit->second].ip, logop.ip) && userlist[userit->second].port == logop.port)
 		{
 			sndbuffer[0] = SPECIAL_STATUS;
 			sndbuffer[1] = SND_KICK;
@@ -242,7 +244,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 		}
 		if (status == SPECIAL_STATUS)
 		{
-			if (userit ==usermap.end() || strcmp(userlist[userit->second].ip, logop.ip) || userlist[userit->second].port != logop.port)
+			if (userit == usermap.end() || strcmp(userlist[userit->second].ip, logop.ip) || userlist[userit->second].port != logop.port)
 				return OK;
 
 			user_logout(logop.user, logop.ip, logop.port, 1);
@@ -302,7 +304,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 					userlist[userit->second].tbuff[0] = KickPack;
 
-					sndbuffer[1] = SND_WAIT;
+					sndbuffer[1] = SND_KICK;
 					sndbufferlength = 2;
 
 					break;
@@ -668,6 +670,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 		}
 	}
 
+	logop.status = sndbuffer[0];
+	logop.op = sndbuffer[1];
 	logop.nbytes = server->Send(sndbuffer, client_addr, sndbufferlength);
 	logop.Server_Log(logop._Send);
 	return OK;
