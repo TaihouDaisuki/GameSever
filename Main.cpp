@@ -904,12 +904,11 @@ int start_operator(UserInfo &user, const char *p)
 		for (int i = 0; i < ChessSize; ++i)
 		{
 			int base = i * ChessSize;
-			for (int j = 0; i < ChessSize; ++j)
+			for (int j = 0; j < ChessSize; ++j)
 			{
 				char tA = user.A[base + j] + '0';
 				Map.append(&tA, 1);
 			}
-				
 			Map.append("\n");
 		}
 		logop.Game_Log(logop._GetMap, user.roomid, Map);
