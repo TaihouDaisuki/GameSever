@@ -902,7 +902,16 @@ int start_operator(UserInfo &user, const char *p)
 
 		string Map = "";
 		for (int i = 0; i < ChessSize; ++i)
-			Map.append(user.A[i * ChessSize], ChessSize).append("\n");
+		{
+			int base = i * ChessSize;
+			for (int j = 0; i < ChessSize; ++j)
+			{
+				char tA = user.A[base + j] + '0';
+				Map.append(&tA, 1);
+			}
+				
+			Map.append("\n");
+		}
 		logop.Game_Log(logop._GetMap, user.roomid, Map);
 	}
 
