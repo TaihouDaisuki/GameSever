@@ -702,7 +702,7 @@ int user_login(string username, const char *ip, const int port)
 	if (!flag)
 		return ERROR;
 	usermap.insert(make_pair(username, useri));
-	cout << "userid = " << useri << endl;
+	//cout << "userid = " << useri << endl;
 
 	UserInfo &user = userlist[useri];
 	memcpy(user.ip, ip, IPLength);
