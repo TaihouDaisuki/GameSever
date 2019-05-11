@@ -563,8 +563,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 				user.tbuff[0] = WaitPack;
 
-				char p[2 * PlaneNum];
-				memcpy(p, load, 2 * PlaneNum);
+				char p[4 * PlaneNum];
+				memcpy(p, load, 4 * PlaneNum);
 				int res = start_operator(user, p);
 
 				if (res == Start)
@@ -987,7 +987,7 @@ int check_operator(UserInfo &user, const char X0, const char Y0, const char X1, 
 }
 void draw_plane(char *A, const char X0, const char Y0, const char X1, const char Y1)
 {
-	int basepos = X0 * ChessSize + Y0;
+	int basepos = Y0 * ChessSize + X0;
 	int k, pos;
 
 	if (X0 == X1)
@@ -998,13 +998,13 @@ void draw_plane(char *A, const char X0, const char Y0, const char X1, const char
 	A[basepos] = CritialHit;
 	for (int i = 1; i < PlaneSize; ++i)
 	{
-		pos = basepos + deltaX[k][i] * ChessSize + deltaY[k][i];
+		pos = basepos + deltaX[k][i] + deltaY[k][i] * ChessSize;
 		A[pos] = HitPlane;
 	}
 }
 void fill_plane(char *A, const char X0, const char Y0, const char X1, const char Y1)
 {
-	int basepos = X0 * ChessSize + Y0;
+	int basepos = Y0 * ChessSize + X0;
 	int k, pos;
 	if (X0 == X1)
 		k = Y0 < Y1 ? 0 /* up */ : 1 /* down */;
@@ -1012,7 +1012,7 @@ void fill_plane(char *A, const char X0, const char Y0, const char X1, const char
 		k = X0 < X1 ? 2 /* left */ : 3 /* right */;
 	for (int i = 0; i < PlaneSize; ++i)
 	{
-		pos = basepos + deltaX[k][i] * ChessSize + deltaY[k][i];
+		pos = basepos + deltaX[k][i] + deltaY[k][i] * ChessSize;
 		A[pos] = -A[pos];
 	}
 }
