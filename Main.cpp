@@ -365,11 +365,27 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			if (op == RCV_BATTLE_REQ)
 			{
 				UserInfo &user = userlist[userit->second];
+				string friendname(load, UserNameLength);
+				map<string, int>::iterator friendit;
+				friendit = usermap.find(friendname);
 
 				if (user.tbuff[0] != NonePack)
 				{
 					if (user.tbuff[0] == WaitingPack)
 					{
+						if(friendit == usermap.end() || userlist[friendit->second].port == NoConnect)
+						{
+							user.tbuff[0] = InviteRequestPack;
+							for (int i = 1; i <= 4; ++i)
+								user.tbuff[i] = 'X';
+
+							sndbuffer[1] = SND_ROOM_INFO;
+							for (int i = 1; i <= 4; ++i)
+								sndbuffer[i + 1] = user.tbuff[i];
+							sndbufferlength = 6;
+							break;
+						}
+
 						sndbuffer[1] = SND_WAIT;
 						sndbufferlength = 2;
 
@@ -393,10 +409,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 						break;
 					}
 				}
-
-				string friendname(load, UserNameLength);
-				map<string, int>::iterator friendit;
-				friendit = usermap.find(friendname);
 
 				string Append(friendname);
 				Append.append("[").append(userlist[friendit->second].ip).append("].");
