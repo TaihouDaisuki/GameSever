@@ -46,16 +46,16 @@ void Log::Server_Log(_Server_Type Type, string Append)
     switch(Type)
     {
         case _Connect:
-            logfile << "===Server Log=== " << "Get a connection from " << ip <<  "[" << port << "], " << Append << endl;
+            logfile << "===Login Log=== " << "Get a connection from " << ip <<  "[" << port << "], " << Append << endl;
             break;
         case _Disconnect:
-            logfile << "===Server Log=== " << ip << "[" << port << "] disconnected from sever, reason: " << Append << endl;
+            logfile << "===Logout Log=== " << ip << "[" << port << "] disconnected from sever, reason: " << Append << endl;
             break;
         case _Missconnect:
-            logfile << "===Server Log=== " << "Sever miss the connection to " << ip << "[" << port << "]" << endl;
+            logfile << "===Logout Log=== " << "Sever miss the connection to " << ip << "[" << port << "]" << endl;
             break;
         case _Reconnect:
-            logfile << "===Server Log=== " << "Get a reconnect request from " << ip << "[" << port << "], " << Append << endl;
+            logfile << "===Login Log=== " << "Get a reconnect request from " << ip << "[" << port << "], " << Append << endl;
             break;
         case _Recv:
             logfile << "===Server Log=== " << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" 
