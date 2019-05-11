@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <time.h>
+#include <iomanip>
 
 /* public */
 Log::Log()
@@ -126,6 +127,11 @@ void Log::Get_Time()
     tt += 3600 * Cur_TimeZone;
     tm* t = gmtime(&tt);
 
-    logfile << "[" << 1900 + t->tm_year << "-" << 1 + t->tm_mon << "-" << t->tm_mday << " "
-        << t->tm_hour << ":" << t->tm_min << ":" << t->tm_sec << "] ";
+    logfile << "[" 
+        << 1900 + t->tm_year << "-" 
+        << 1 + t->tm_mon << "-" 
+        << t->tm_mday << " "
+        << setw(2) << setfill('0') << t->tm_hour << ":" 
+        << setw(2) << setfill('0') << t->tm_min << ":" 
+        << setw(2) << setfill('0') << t->tm_sec << "] ";
 }
