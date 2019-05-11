@@ -930,7 +930,7 @@ int click_operator(UserInfo &user, const char X, const char Y)
 		return ERROR;
 	UserInfo &opponent = user.side ? userlist[roomit->second.first] : userlist[roomit->second.second];
 
-	int pos = ChessSize * X + Y;
+	int pos = ChessSize * Y + X;
 	if (opponent.A[pos] < 0)
 		return -opponent.A[pos];
 
