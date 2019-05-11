@@ -15,13 +15,25 @@ map<int, pair<int, int>> roommap; // first-roomid second<Aplayerid, Bplayerid>
 int roomlist[MaxRoomNum];
 int roomi;
 
-int main()
+int main(int argc, char **argv)
 {
+	if(argc != 2)
+	{
+		cerr << "Error: You should input ./Main [port]" << endl;
+		exit(-1);
+	}
+	int _port = atoi(argv[1]);
+	if(_port < 21000 || _port > 21999)
+	{
+		cerr << "Error: The port number should between [21000 - 21999]" << endl;
+		exit(-1);
+	}
+
 	//reset_daemon();
 	init();
 
 	Server server;
-	int serverstate = server.Initialize(21114); /* server initialize */
+	int serverstate = server.Initialize(_port);
 	logop.Initialize(serverstate);
 	if (serverstate == ERROR)
 	{
@@ -129,26 +141,17 @@ void reset_daemon()
 {
 	pid_t pid;
 	if ((pid = fork()))
-		exit(0); //是父进程，则结束父进�?
+		exit(0);
 	else if (pid < 0)
-		exit(1); //fork失败，退�?
+		exit(1);
 
-	//是第一子进程，后台继续执行
-	setsid(); //第一子进程成为新的会话组长和进程组长
-	//与控制终端分�?
+	setsid();
 	if ((pid = fork()))
-		exit(0); //是第一子进程，结束第一子进�?
+		exit(0);
 	else if (pid < 0)
-		exit(1); //fork失败，退�?
-	//是第二子进程，继续。第二子进程不再是会话组�?
+		exit(1);
 
-	//for(i = 0; i < NOFILE; ++i)
-	//	close(i);
-	//关闭从父进程继承打开的文件描述符，节省系统资�?
-	//但这里需要输出回显，因此不关�?
-
-	//chdir("/root/");	//改变工作目录到root，这里只需要打印，所以不需�?
-	umask(0); //重设文件创建掩模，防止守护进程创建的文件存取位被父进程修�?
+	umask(0);
 	return;
 }
 void init()
@@ -216,9 +219,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	char op = logop.op;
 	char *load = buff + 22;
 
-	//cout << "Recv from" << logop.ip << "[" << logop.port <<"] user: " << logop.user << endl;
-	//cout << "status = " << (int)status << " op = " << (int)op << endl;
-
 	char sndbuffer[BuffLength];
 	int sndbufferlength = 0;
 
@@ -227,6 +227,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	{
 		map<string, int>::iterator userit;
 		userit = usermap.find(logop.user);
+		if(userit == usermap.end() && (status != LOGIN_STATUS || op != RCV_LOG_IN))
+			return ERROR;
 
 		if (userit != usermap.end())
 			get_pack[userit->second] = 1;
@@ -397,7 +399,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 							int roomid = 0;
 							for (int i = 1; i <= 4; ++i)
 								roomid = roomid * 10 + user.tbuff[i] - '0';
-							join_room(logop.user, roomid);
 						}
 
 						sndbuffer[1] = SND_ROOM_INFO;
@@ -467,7 +468,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 						user.tbuff[i] = userlist[friendit->second].tbuff[i] = '0' + roomid % 10;
 					roommap.insert(make_pair(roomi, make_pair(Empty, Empty)));
 
-					join_room(logop.user, roomi);
+					join_room(logop.user, friendname, roomi);
+					cout << "user = " << userit->second << ", roomid = " << roomi << endl;
 				}
 				else
 				{
@@ -510,6 +512,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			int opponent = user.side ? roomit->second.first : roomit->second.second;
 			if (userlist[opponent].roomid != user.roomid)
 			{
+				cout << "user = " << userit->second << ", opponent = " << opponent << endl;
 				sndbuffer[1] = SND_DROP;
 				sndbufferlength = 2;
 				break;
@@ -781,20 +784,28 @@ int user_logout(string username, const char *ip, const int port, const int kick)
 int get_user_list(string username, const int start_num, const int request_num, string *reslist, int &totnum)
 {
 	totnum = 0;
+	int avanum = 0;
 
 	map<string, int>::iterator userit;
 	for (userit = usermap.begin(); userit != usermap.end(); ++userit)
 	{
-		if (totnum == start_num)
+		if (avanum == start_num)
 			break;
-		if (userit->first != username)
-			++totnum;
+		if (userit->first == username)
+			continue;
+
+		++totnum;
+		if (userlist[userit->second].roomid == NoRoom)
+			++avanum;
 	}
 	int res = 0;
 	for (; userit != usermap.end(); ++userit)
 	{
 		if(userit->first == username)
 			continue;
+		if(userlist[userit->second].roomid != NoRoom)
+			continue;
+
 		reslist[res++] = userit->first;
 		if (res == request_num)
 			break;
@@ -802,40 +813,51 @@ int get_user_list(string username, const int start_num, const int request_num, s
 
 	return res;
 }
-int join_room(string username, const int roomid)
+int join_room(string userA, string userB, const int roomid)
 {
-	map<string, int>::iterator userit;
-	userit = usermap.find(username);
-	if (userit == usermap.end())
-		return ERROR;
-	UserInfo &user = userlist[userit->second];
+	map<string, int>::iterator itA;
+	map<string ,int>::iterator itB;
+	itA = usermap.find(userA);
+	itB = usermap.find(userB);
 
-	if (user.roomid == roomid)
+	if (itA == usermap.end() || itB == usermap.end())
+		return ERROR;
+		
+	UserInfo &uA = userlist[itA->second];
+	UserInfo &uB = userlist[itB->second];
+
+	if (uA.roomid == roomid)
 		return OK;
 
 	map<int, pair<int, int>>::iterator roomit;
 	roomit = roommap.find(roomid);
-
 	if (roomit == roommap.end())
 		return NoExist;
 
-	if (!((roomit->second.first == Empty) | (roomit->second.second == Empty)))
-		return Full;
-
-	if (roomit->second.first == Empty)
+	time_t Time;
+	time(&Time);
+	int f = Time & 1;
+	if(f)
 	{
-		roomit->second.first = userit->second;
-		user.side = 0;
+		roomit->second.first = itA->second;
+		uA.side = 0;
+		roomit->second.second = itB->second;
+		uB.side = 1;
 	}
 	else
 	{
-		roomit->second.second = userit->second;
-		user.side = 1;
+		roomit->second.first = itB->second;
+		uA.side = 1;
+		roomit->second.second = itA->second;
+		uB.side = 0;
 	}
-	user.roomid = roomid;
-	user.plane = Unready;
 
-	logop.Game_Log(logop._Join, roomid);
+	uA.roomid = uB.roomid = roomid;
+	uA.plane = uB.plane = Unready;
+
+	string Append;
+	Append.append(userA).append(" and ").append(userB).append(" have joined.");
+	logop.Game_Log(logop._Join, roomid, Append);
 	return OK;
 }
 int left_room(UserInfo &user)

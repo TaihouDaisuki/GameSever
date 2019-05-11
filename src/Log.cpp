@@ -86,7 +86,7 @@ void Log::Game_Log(_Game_Type Type, const int Room_ID, string Append)
             logfile << "===Game Log=== "  << user << "[" << ip << "]" << " refuse the battle invitation from " << Append << endl;
             break;
         case _Join:
-            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has joined currently." << endl;
+            logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << Append << endl;
             break;
         case _Leave:
             logfile << "===Game Log=== "  << "Room<" << Room_ID << ">: " << user << "[" << ip << "]" << " has left currently." << endl;

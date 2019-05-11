@@ -68,7 +68,7 @@ int user_logout(string username, const char* ip, const int port, const int kick 
 
 int get_user_list(string username, const int start_num, const int request_num, string * reslist, int &totnum);
 int create_room(string username);
-int join_room(string username, const int roomid);
+int join_room(string userA, string userB, const int roomid);
 int left_room(UserInfo &user);
 
 int ready_operator(UserInfo &user, const int isReady);
