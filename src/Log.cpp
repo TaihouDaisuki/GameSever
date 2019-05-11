@@ -59,11 +59,11 @@ void Log::Server_Log(_Server_Type Type, string Append)
             break;
         case _Recv:
             logfile << "===Server Log=== " << "Receive " << nbytes << " byte(s) from " << ip << "[" << port << "]" 
-                << ", username =  " << user << ", status = " << status << ", op = " << op << endl;
+                << ", username =  " << user << ", status = " << (unsigned int)status << ", op = " << (unsigned int)op << endl;
             break;
         case _Send:
             logfile << "===Server Log=== " << "Send " << nbytes << " bytes(s) to " << ip << "[" << port << "]"
-                << ", username =  " << user << ", status = " << status << ", op = " << op << endl;
+                << ", username =  " << user << ", status = " << (unsigned int)status << ", op = " << (unsigned int)op << endl;
             break;
         default:
             break;
