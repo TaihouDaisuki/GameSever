@@ -7,6 +7,8 @@
 
 using namespace std;
 
+const char logfilename[50] = "/tmp/server.log";
+
 class Log
 {
 /* member */

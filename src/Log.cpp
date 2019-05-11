@@ -10,7 +10,7 @@
 Log::Log()
 {
     Cur_TimeZone=8;
-    strcpy(Logfile_Name,"server.log");
+    strcpy(Logfile_Name, logfilename);
     logfile.open(Logfile_Name, ios::app | ios::out);
     if(!logfile)
     {

@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	//reset_daemon();
+	daemon(0, 0);
 	init();
 
 	Server server;
@@ -50,7 +50,6 @@ int main(int argc, char **argv)
 
 		if (server.MainActivity() == NOPACK)
 			usleep(100000);
-
 	}
 
 	logop.Close();
@@ -137,23 +136,6 @@ string Transform(const char X, const char Y)
 	return res;
 }
 
-void reset_daemon()
-{
-	pid_t pid;
-	if ((pid = fork()))
-		exit(0);
-	else if (pid < 0)
-		exit(1);
-
-	setsid();
-	if ((pid = fork()))
-		exit(0);
-	else if (pid < 0)
-		exit(1);
-
-	umask(0);
-	return;
-}
 void init()
 {
 	usermap.clear();
@@ -469,7 +451,6 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 					roommap.insert(make_pair(roomi, make_pair(Empty, Empty)));
 
 					join_room(logop.user, friendname, roomi);
-					cout << "user = " << userit->second << ", roomid = " << roomi << endl;
 				}
 				else
 				{
@@ -510,9 +491,8 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			map<int,pair<int, int>>::iterator roomit;
 			roomit = roommap.find(user.roomid);
 			int opponent = user.side ? roomit->second.first : roomit->second.second;
-			if (userlist[opponent].roomid != user.roomid)
+			if (opponent == Empty || userlist[opponent].roomid != user.roomid)
 			{
-				cout << "user = " << userit->second << ", opponent = " << opponent << endl;
 				sndbuffer[1] = SND_DROP;
 				sndbufferlength = 2;
 				break;
@@ -716,7 +696,6 @@ int user_login(string username, const char *ip, const int port)
 	if (!flag)
 		return ERROR;
 	usermap.insert(make_pair(username, useri));
-	//cout << "userid = " << useri << endl;
 
 	UserInfo &user = userlist[useri];
 	memcpy(user.ip, ip, IPLength);
