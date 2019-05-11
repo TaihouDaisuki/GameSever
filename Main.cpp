@@ -233,26 +233,23 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			get_pack[userit->second] = 1;
 
 		/* kick */
-		if (userit != usermap.end() && userlist[userit->second].tbuff[0] == KickPack 
+		if (userit != usermap.end() && userlist[userit->second].tbuff[0] == KickPack
 			&& !strcmp(userlist[userit->second].ip, logop.ip) && userlist[userit->second].port == logop.port)
 		{
-			sndbuffer[0] = SPECIAL_STATUS;
-			sndbuffer[1] = SND_KICK;
-			sndbufferlength = 2;
+			if(status == SPECIAL_STATUS)
+			{
+				user_logout(logop.user, logop.ip, logop.port, 1);
+				sndbuffer[0] = SPECIAL_STATUS;
+				sndbuffer[1] = SND_WAIT;
+				sndbufferlength = 2;
 
-			break;
-		}
-		if (status == SPECIAL_STATUS)
-		{
-			if (userit == usermap.end() || strcmp(userlist[userit->second].ip, logop.ip) || userlist[userit->second].port != logop.port)
-				return OK;
+				break;
+			}
+		 	sndbuffer[0] = SPECIAL_STATUS;
+		 	sndbuffer[1] = SND_KICK;
+		 	sndbufferlength = 2;
 
-			user_logout(logop.user, logop.ip, logop.port, 1);
-			sndbuffer[0] = SPECIAL_STATUS;
-			sndbuffer[1] = SND_WAIT;
-			sndbufferlength = 2;
-
-			break;
+		 	break;
 		}
 
 		/* log in */
@@ -304,7 +301,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 
 					userlist[userit->second].tbuff[0] = KickPack;
 
-					sndbuffer[1] = SND_KICK;
+					sndbuffer[1] = SND_WAIT;
 					sndbufferlength = 2;
 
 					break;
@@ -408,7 +405,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 				user.tbuff[0] = WaitingPack;
 				userlist[friendit->second].tbuff[0] = InvitePack;
 				memcpy(userlist[friendit->second].tbuff + 1, logop.user.c_str(), UserNameLength);
-				
+
 				sndbuffer[1] = SND_WAIT;
 				sndbufferlength = 2;
 
@@ -701,7 +698,7 @@ int user_login(string username, const char *ip, const int port)
 		flag = 1;
 		break;
 	}
-		
+
 	if (!flag)
 		return ERROR;
 	usermap.insert(make_pair(username, useri));
@@ -800,7 +797,7 @@ int join_room(string username, const int roomid)
 	userit = usermap.find(username);
 	if (userit == usermap.end())
 		return ERROR;
-	UserInfo &user = userlist[userit->second];	
+	UserInfo &user = userlist[userit->second];
 
 	if (user.roomid == roomid)
 		return OK;
