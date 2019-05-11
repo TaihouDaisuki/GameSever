@@ -590,7 +590,7 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 			sndbuffer[0] = BATTLE_STATUS;
 			if (op == RCV_WAIT)
 			{
-				if (opponent == Empty || userlist[opponent].rooid != user.roomid)
+				if (opponent == Empty || userlist[opponent].roomid != user.roomid)
 				{
 					sndbuffer[1] = SND_DROP;
 					sndbufferlength = 2;
