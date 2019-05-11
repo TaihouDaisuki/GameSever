@@ -1,5 +1,5 @@
 # 基于UDP的炸飞机游戏服务器
-*developed by TaihouDaisuki(UDP Socket by YYY-my roommate)*  
+*developed by TaihouDaisuki (UDP Socket by YYY-my roommate)*  
 
 ****
 ## 基本交互逻辑  
