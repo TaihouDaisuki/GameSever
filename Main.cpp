@@ -208,10 +208,9 @@ int work(Server *server, int nbytes, struct sockaddr_in client_addr, char *buff)
 	logop.port = client_addr.sin_port;
 	logop.nbytes = nbytes;
 	logop.user.assign(buff + 2, UserNameLength);
-	logop.Server_Log(logop._Recv);
-
 	logop.status = buff[0];
 	logop.op = buff[1];
+	logop.Server_Log(logop._Recv);
 
 	char status = logop.status;
 	char op = logop.op;
